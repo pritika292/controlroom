@@ -15,10 +15,9 @@ describe("securityHeaders middleware", () => {
     expect(res.headers["x-content-type-options"]).toBe("nosniff");
   });
 
-  it("does not set HSTS header in test/dev environment", async () => {
+  it("never sets HSTS (controlroom is HTTP-only until TLS lands)", async () => {
     const app = createApp();
     const res = await request(app).get("/health");
-    // NODE_ENV=test (set in setup.server.ts) so HSTS must be absent.
     expect(res.headers["strict-transport-security"]).toBeUndefined();
   });
 
@@ -27,5 +26,14 @@ describe("securityHeaders middleware", () => {
     const res = await request(app).get("/health");
     expect(res.headers["content-security-policy"]).toBeDefined();
     expect(res.headers["content-security-policy"]).toContain("default-src 'self'");
+  });
+
+  it("does not include upgrade-insecure-requests in CSP", async () => {
+    // helmet adds this directive by default; on an HTTP-only site it forces
+    // the browser to upgrade asset requests to HTTPS and the page goes white.
+    // Regression test for the white-screen bug.
+    const app = createApp();
+    const res = await request(app).get("/health");
+    expect(res.headers["content-security-policy"]).not.toContain("upgrade-insecure-requests");
   });
 });
