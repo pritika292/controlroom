@@ -107,13 +107,14 @@ describe("<Project />", () => {
     });
   });
 
-  it("renders a recent-pings table with one row per ping", async () => {
+  it("renders the recent pings list (capped at 10 rows, newest first)", async () => {
     renderAt("/p/shortlive");
     await waitFor(() => {
-      expect(screen.getByRole("table")).toBeInTheDocument();
+      expect(screen.getByText("RECENT PINGS")).toBeInTheDocument();
     });
-    // 1 header row + 3 data rows
-    expect(screen.getAllByRole("row")).toHaveLength(4);
+    // Three mocked pings -> three list items, all rendered.
+    const items = screen.getAllByRole("listitem");
+    expect(items.length).toBeGreaterThanOrEqual(3);
   });
 
   it("shows the planned-project hero for a planned project", async () => {

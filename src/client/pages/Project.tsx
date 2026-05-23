@@ -162,46 +162,9 @@ export function Project(): JSX.Element {
         </div>
       </section>
 
-      {/* Recent pings table */}
-      <section className="mt-3 te-panel p-5">
-        <p className="te-label">RECENT PINGS / {pings.length}</p>
-        {pingsLoading && pings.length === 0 ? (
-          <p className="mt-3 te-label">LOADING...</p>
-        ) : pings.length === 0 ? (
-          <p className="mt-3 te-label">NO PINGS IN LAST 24H</p>
-        ) : (
-          <table className="mt-3 w-full font-mono text-xs">
-            <thead>
-              <tr className="text-left te-label">
-                <th className="py-2 pr-4">WHEN</th>
-                <th className="py-2 pr-4">STATUS</th>
-                <th className="py-2">LATENCY</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[...pings]
-                .reverse()
-                .slice(0, 50)
-                .map((p, i) => (
-                  <tr
-                    key={`${p.ts}-${i}`}
-                    className="border-t border-zinc-100 dark:border-zinc-900"
-                  >
-                    <td className="py-2 pr-4 text-zinc-700 dark:text-zinc-300">
-                      {relativeTime(p.ts)}
-                    </td>
-                    <td className="py-2 pr-4">
-                      <StatusPill status={p.status} />
-                    </td>
-                    <td className="py-2 text-zinc-700 dark:text-zinc-300">{pingLatency(p)}</td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-        )}
-      </section>
-
-      <section className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+      {/* Recent pings sits beside commits + deploys in a tight 3-col row */}
+      <section className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
+        <RecentPings pings={pings} loading={pingsLoading} />
         <CommitsPanel slug={project.slug} repo={project.repo} />
         <DeploysPanel slug={project.slug} />
       </section>
@@ -215,6 +178,38 @@ function Stat({ label, value }: { label: string; value: string }): JSX.Element {
       <dt className="te-label">{label}</dt>
       <dd className="mt-1 font-mono text-2xl text-zinc-900 dark:text-white">{value}</dd>
     </div>
+  );
+}
+
+const RECENT_PINGS_LIMIT = 10;
+
+function RecentPings({ pings, loading }: { pings: ProjectPing[]; loading: boolean }): JSX.Element {
+  // Server returns ascending (oldest first); reverse to put the newest on top.
+  const rows = [...pings].reverse().slice(0, RECENT_PINGS_LIMIT);
+
+  return (
+    <article className="te-panel p-5">
+      <p className="te-label">RECENT PINGS</p>
+      {loading && rows.length === 0 ? (
+        <p className="mt-3 te-label">LOADING...</p>
+      ) : rows.length === 0 ? (
+        <p className="mt-3 te-label">NO PINGS YET</p>
+      ) : (
+        <ul className="mt-3 divide-y divide-zinc-100 dark:divide-zinc-900 font-mono text-xs">
+          {rows.map((p, i) => (
+            <li key={`${p.ts}-${i}`} className="py-1.5 flex items-center justify-between gap-2">
+              <span className="text-zinc-500 dark:text-zinc-400">
+                {relativeTime(p.ts).toUpperCase()}
+              </span>
+              <span className="flex items-center gap-2">
+                <span className="text-zinc-700 dark:text-zinc-300">{pingLatency(p)}</span>
+                <StatusPill status={p.status} />
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </article>
   );
 }
 
