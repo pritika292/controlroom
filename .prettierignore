@@ -1,0 +1,8 @@
+dist
+node_modules
+package-lock.json
+
+# Prose / config files we hand-format
+*.md
+*.yaml
+*.yml
