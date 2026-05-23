@@ -25,9 +25,12 @@ if [ -z "${POSTGRES_PASSWORD:-}" ] || [ -z "${REDIS_PASSWORD:-}" ]; then
   exit 1
 fi
 
-if [ -z "${GITHUB_PAT:-}" ]; then
-  echo "ERROR: GITHUB_PAT missing from $INFRA_ENV — add it with: echo 'GITHUB_PAT=<fine-grained PAT>' >> /opt/pritika/_infra/.env" >&2
-  exit 1
+# GITHUB_PAT is user-supplied; read from the shared infra env under the
+# project-specific key. If absent, proceed with an empty value — Tier 0-3
+# features do not require GitHub API access.
+GITHUB_PAT="${CONTROLROOM_GITHUB_PAT:-}"
+if [ -z "$GITHUB_PAT" ]; then
+  log "GITHUB_PAT not set — Tier 4 GitHub sync will be inactive"
 fi
 
 log "Ensuring controlroom database exists"
@@ -62,6 +65,7 @@ DATABASE_URL=postgres://postgres:${POSTGRES_PASSWORD}@pritika-postgres:5432/cont
 REDIS_URL=redis://:${REDIS_PASSWORD}@pritika-redis:6379/12
 GITHUB_PAT=${GITHUB_PAT}
 GITHUB_WEBHOOK_SECRET=${GITHUB_WEBHOOK_SECRET}
+LOG_LEVEL=info
 EOF
 log "Wrote $PROJECT_ENV (mode 600)"
 

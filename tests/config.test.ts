@@ -1,26 +1,29 @@
 import { describe, it, expect } from "vitest";
 import { parseConfig, redact } from "../src/server/config.js";
 
-// Valid dev environment (NODE_ENV=test bypasses prod guards)
+// Valid dev environment — GITHUB_PAT and GITHUB_WEBHOOK_SECRET are optional everywhere
 const VALID_DEV_ENV: NodeJS.ProcessEnv = {
   NODE_ENV: "development",
   PORT: "3012",
   DATABASE_URL: "postgres://user:pass@localhost:5432/controlroom",
   REDIS_URL: "redis://localhost:6379/0",
-  GITHUB_PAT: "replace-me",
-  GITHUB_WEBHOOK_SECRET: "replace-me",
   LOG_LEVEL: "info",
 };
 
-// Valid production environment satisfying all prod guards
+// Minimal valid production environment — GitHub secrets absent (Tier 0-3 baseline)
 const VALID_PROD_ENV: NodeJS.ProcessEnv = {
   NODE_ENV: "production",
   PORT: "3012",
   DATABASE_URL: "postgres://user:strongpass@prod-db:5432/controlroom",
   REDIS_URL: "redis://pritika-redis:6379/12",
+  LOG_LEVEL: "info",
+};
+
+// Valid production environment with GitHub secrets present
+const VALID_PROD_ENV_WITH_GITHUB: NodeJS.ProcessEnv = {
+  ...VALID_PROD_ENV,
   GITHUB_PAT: "github_pat_" + "A".repeat(40),
   GITHUB_WEBHOOK_SECRET: "a".repeat(32),
-  LOG_LEVEL: "info",
 };
 
 describe("schema parsing", () => {
@@ -32,9 +35,10 @@ describe("schema parsing", () => {
     expect(Object.isFrozen(cfg)).toBe(true);
   });
 
-  it("rejects missing GITHUB_PAT", () => {
+  it("accepts missing GITHUB_PAT (defaults to empty string)", () => {
     const env = { ...VALID_DEV_ENV, GITHUB_PAT: undefined };
-    expect(() => parseConfig(env)).toThrow(/GITHUB_PAT/);
+    const cfg = parseConfig(env);
+    expect(cfg.GITHUB_PAT).toBe("");
   });
 
   it("rejects invalid REDIS_URL (no protocol)", () => {
@@ -44,14 +48,44 @@ describe("schema parsing", () => {
 });
 
 describe("prod guards", () => {
-  it("rejects placeholder PAT in production", () => {
-    const env = { ...VALID_PROD_ENV, GITHUB_PAT: "replace-me" };
-    expect(() => parseConfig(env)).toThrow(/GITHUB_PAT/);
+  describe("Tier 0-3: empty GitHub secrets are tolerated in production", () => {
+    it("boots in production with no GITHUB_PAT and no GITHUB_WEBHOOK_SECRET", () => {
+      expect(() => parseConfig(VALID_PROD_ENV)).not.toThrow();
+    });
+
+    it("boots in production with explicit empty GITHUB_PAT and GITHUB_WEBHOOK_SECRET", () => {
+      const env = { ...VALID_PROD_ENV, GITHUB_PAT: "", GITHUB_WEBHOOK_SECRET: "" };
+      expect(() => parseConfig(env)).not.toThrow();
+    });
   });
 
-  it("rejects short webhook secret in production", () => {
-    const env = { ...VALID_PROD_ENV, GITHUB_WEBHOOK_SECRET: "short" };
-    expect(() => parseConfig(env)).toThrow(/GITHUB_WEBHOOK_SECRET/);
+  describe("non-empty GitHub secrets are validated when present", () => {
+    it("rejects a non-empty GITHUB_PAT that does not match the github_pat_... format", () => {
+      const env = { ...VALID_PROD_ENV, GITHUB_PAT: "ghp_invalid_old_format_token" };
+      expect(() => parseConfig(env)).toThrow(/GITHUB_PAT/);
+    });
+
+    it("rejects a non-empty GITHUB_PAT that is a placeholder value", () => {
+      const env = { ...VALID_PROD_ENV, GITHUB_PAT: "replace-me" };
+      expect(() => parseConfig(env)).toThrow(/GITHUB_PAT/);
+    });
+
+    it("rejects a non-empty GITHUB_WEBHOOK_SECRET shorter than 32 chars", () => {
+      const env = { ...VALID_PROD_ENV, GITHUB_WEBHOOK_SECRET: "short" };
+      expect(() => parseConfig(env)).toThrow(/GITHUB_WEBHOOK_SECRET/);
+    });
+
+    it("rejects a non-empty GITHUB_WEBHOOK_SECRET that is a placeholder value", () => {
+      const env = { ...VALID_PROD_ENV, GITHUB_WEBHOOK_SECRET: "replace-me" };
+      expect(() => parseConfig(env)).toThrow(/GITHUB_WEBHOOK_SECRET/);
+    });
+
+    it("accepts a valid prod env with real GitHub secrets", () => {
+      const cfg = parseConfig(VALID_PROD_ENV_WITH_GITHUB);
+      expect(cfg.NODE_ENV).toBe("production");
+      expect(cfg.GITHUB_PAT).toMatch(/^github_pat_/);
+      expect(Object.isFrozen(cfg)).toBe(true);
+    });
   });
 
   it("rejects REDIS_URL not ending in /12 in production", () => {
@@ -64,10 +98,12 @@ describe("prod guards", () => {
     expect(() => parseConfig(env)).toThrow(/DATABASE_URL/);
   });
 
-  it("accepts a valid prod env", () => {
+  it("accepts a minimal prod env without GitHub secrets", () => {
     const cfg = parseConfig(VALID_PROD_ENV);
     expect(cfg.NODE_ENV).toBe("production");
     expect(cfg.REDIS_URL).toBe("redis://pritika-redis:6379/12");
+    expect(cfg.GITHUB_PAT).toBe("");
+    expect(cfg.GITHUB_WEBHOOK_SECRET).toBe("");
     expect(Object.isFrozen(cfg)).toBe(true);
   });
 });

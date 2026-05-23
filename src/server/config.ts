@@ -13,8 +13,11 @@ const ConfigSchema = z.object({
   REDIS_URL: z.string().min(1, "REDIS_URL is required").startsWith("redis://", {
     message: "REDIS_URL must start with redis://",
   }),
-  GITHUB_PAT: z.string().min(1, "GITHUB_PAT is required"),
-  GITHUB_WEBHOOK_SECRET: z.string().min(1, "GITHUB_WEBHOOK_SECRET is required"),
+  // GITHUB_PAT and GITHUB_WEBHOOK_SECRET are optional in Tier 0-3 (no GitHub-touching features
+  // yet). When Tier 4 (issue #19, GitHub sync worker) lands, tighten the guards to require
+  // non-empty.
+  GITHUB_PAT: z.string().default(""),
+  GITHUB_WEBHOOK_SECRET: z.string().default(""),
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
 });
 
@@ -54,23 +57,23 @@ export function parseConfig(env: NodeJS.ProcessEnv): Config {
   if (data.NODE_ENV === "production") {
     const violations: string[] = [];
 
-    if (
-      !GITHUB_PAT_REGEX.test(data.GITHUB_PAT) ||
-      PLACEHOLDER_VALUES.includes(data.GITHUB_PAT) ||
-      data.GITHUB_PAT.length < 30
-    ) {
-      violations.push(
-        "  - GITHUB_PAT: must match GitHub PAT format and not be a placeholder in production",
-      );
+    if (data.GITHUB_PAT !== "") {
+      if (!GITHUB_PAT_REGEX.test(data.GITHUB_PAT) || PLACEHOLDER_VALUES.includes(data.GITHUB_PAT)) {
+        violations.push(
+          "  - GITHUB_PAT: must match GitHub PAT format and not be a placeholder in production",
+        );
+      }
     }
 
-    if (
-      data.GITHUB_WEBHOOK_SECRET.length < 32 ||
-      PLACEHOLDER_VALUES.includes(data.GITHUB_WEBHOOK_SECRET)
-    ) {
-      violations.push(
-        "  - GITHUB_WEBHOOK_SECRET: must be at least 32 chars and not a placeholder in production",
-      );
+    if (data.GITHUB_WEBHOOK_SECRET !== "") {
+      if (
+        data.GITHUB_WEBHOOK_SECRET.length < 32 ||
+        PLACEHOLDER_VALUES.includes(data.GITHUB_WEBHOOK_SECRET)
+      ) {
+        violations.push(
+          "  - GITHUB_WEBHOOK_SECRET: must be at least 32 chars and not a placeholder in production",
+        );
+      }
     }
 
     if (!data.REDIS_URL.endsWith("/12")) {
