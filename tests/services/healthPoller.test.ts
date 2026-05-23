@@ -1,0 +1,146 @@
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi, afterEach } from "vitest";
+import pg from "pg";
+import { pollOnce } from "../../src/server/services/healthPoller.js";
+
+const DATABASE_URL = process.env["DATABASE_URL"];
+const describeIfDb = DATABASE_URL ? describe : describe.skip;
+
+// Row shape returned from health_pings.
+interface PingRow {
+  project: string;
+  status: string;
+  latency_ms: number | null;
+  ts: Date;
+}
+
+describeIfDb("healthPoller", () => {
+  let client: pg.Client;
+
+  beforeAll(async () => {
+    client = new pg.Client({ connectionString: DATABASE_URL });
+    await client.connect();
+  });
+
+  beforeEach(async () => {
+    await client.query("TRUNCATE health_pings");
+    vi.restoreAllMocks();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  afterAll(async () => {
+    await client.end();
+  });
+
+  it("inserts one row per live project with status=up when health returns {ok:true}", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ ok: true }),
+      }),
+    );
+
+    await pollOnce();
+
+    const { rows } = await client.query<PingRow>(
+      "SELECT project, status, latency_ms FROM health_pings ORDER BY project",
+    );
+
+    // Only shortlive is live in the registry.
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.project).toBe("shortlive");
+    expect(rows[0]!.status).toBe("up");
+    expect(rows[0]!.latency_ms).not.toBeNull();
+    expect(rows[0]!.latency_ms).toBeGreaterThanOrEqual(0);
+  });
+
+  it("inserts status=timeout and latency_ms=null when fetch throws AbortError", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new DOMException("aborted", "AbortError")));
+
+    await pollOnce();
+
+    const { rows } = await client.query<PingRow>(
+      "SELECT project, status, latency_ms FROM health_pings",
+    );
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.status).toBe("timeout");
+    expect(rows[0]!.latency_ms).toBeNull();
+  });
+
+  it("inserts status=down when response status is non-2xx", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        json: async () => ({}),
+      }),
+    );
+
+    await pollOnce();
+
+    const { rows } = await client.query<PingRow>(
+      "SELECT project, status, latency_ms FROM health_pings",
+    );
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.status).toBe("down");
+    expect(rows[0]!.latency_ms).not.toBeNull();
+  });
+
+  it("inserts status=error when response is 2xx but body is not {ok:true}", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ ok: false }),
+      }),
+    );
+
+    await pollOnce();
+
+    const { rows } = await client.query<PingRow>(
+      "SELECT project, status, latency_ms FROM health_pings",
+    );
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.status).toBe("error");
+  });
+
+  it("retention sweep deletes rows older than 24 hours", async () => {
+    // Seed a stale row directly (ts = 25 hours ago).
+    await client.query(
+      `INSERT INTO health_pings (project, ts, status, latency_ms)
+       VALUES ('shortlive', now() - interval '25 hours', 'up', 100)`,
+    );
+
+    // Confirm the stale row is there before polling.
+    const before = await client.query("SELECT count(*) AS n FROM health_pings");
+    expect(Number(before.rows[0]!.n)).toBe(1);
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ ok: true }),
+      }),
+    );
+
+    await pollOnce();
+
+    // After pollOnce: one fresh row inserted, stale row deleted.
+    const { rows } = await client.query<PingRow>(
+      "SELECT project, status, ts FROM health_pings ORDER BY ts DESC",
+    );
+
+    // Only the fresh row should remain.
+    expect(rows).toHaveLength(1);
+    // The remaining row is recent (within the last minute).
+    const ageMs = Date.now() - new Date(rows[0]!.ts).getTime();
+    expect(ageMs).toBeLessThan(60_000);
+  });
+});
