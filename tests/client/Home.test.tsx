@@ -72,6 +72,19 @@ describe("<Home />", () => {
             }),
           };
         }
+        if (url.startsWith("/api/public/deploys/frequency")) {
+          return {
+            ok: true,
+            json: async () => ({
+              days: 14,
+              total: 0,
+              buckets: Array.from({ length: 14 }, (_, i) => ({
+                date: `2026-05-${String(10 + i).padStart(2, "0")}`,
+                count: 0,
+              })),
+            }),
+          };
+        }
         return { ok: true, json: async () => [] };
       }),
     );
