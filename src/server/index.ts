@@ -1,12 +1,13 @@
 import "dotenv/config";
+import { config } from "./config.js";
 import { createApp } from "./app.js";
 
-const PORT = process.env["PORT"] ?? "3012";
+const PORT = config.PORT;
 
 const app = createApp();
 
-const server = app.listen(Number(PORT), () => {
-  console.log(`[server] listening on :${PORT}`);
+const server = app.listen(PORT, () => {
+  console.log(`[server] listening on :${config.PORT} (env=${config.NODE_ENV})`);
 });
 
 function shutdown(signal: NodeJS.Signals): void {
