@@ -1,21 +1,34 @@
-node_modules/
-dist/
-build/output/
-coverage/
-
+# Environment
 .env
 .env.*
 !.env.example
 
-.DS_Store
-*.log
-npm-debug.log*
-.npm
+# Local Claude Code notes -- auto-loaded by Claude Code but never committed.
+# Anything project-context-related that isn't safe in the public CLAUDE.md goes here.
+CLAUDE.local.md
 
-.vscode/
+# Node
+node_modules/
+dist/
+.vite/
+coverage/
+*.tsbuildinfo
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
 .idea/
+.vscode/
 *.swp
 *.swo
 
-.vite/
-.cache/
+# iCloud Drive sometimes duplicates files across devices with a " 2" suffix.
+# Ignore them so they never get committed by accident.
+* 2.*
+* 2
+
+# Logs / temp
+*.log
+tmp/
+.tmp/

@@ -1,0 +1,105 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Opt JavaScript actions (checkout, setup-node) onto the runner's Node 24
+# ahead of the June 2026 forced cutover so we stop seeing the deprecation
+# warning on every run.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+# Jobs run sequentially via `needs:` so a failure short-circuits the rest of
+# the pipeline instead of burning CI minutes on every checker for an
+# already-broken PR. Order is cheapest first: lint, typecheck, docker-build,
+# then the slowest gate (test).
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .tool-versions
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm audit --omit=dev --audit-level=high
+
+  typecheck:
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .tool-versions
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+
+  docker-build:
+    needs: typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image (verify Dockerfile is valid)
+        run: |
+          if [ -f Dockerfile ]; then
+            docker build -t controlroom:ci .
+          else
+            echo "No Dockerfile yet; skipping docker build."
+          fi
+
+  test:
+    needs: docker-build
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: controlroom
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: controlroom_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U controlroom -d controlroom_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://controlroom:testpass@localhost:5432/controlroom_test
+      REDIS_URL: redis://localhost:6379/12
+      GITHUB_PAT: github_pat_test_placeholder_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+      GITHUB_WEBHOOK_SECRET: ci-test-webhook-secret-32-chars-minxx
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .tool-versions
+          cache: npm
+      - run: npm ci
+      - run: npm run migrate || echo 'no migrations yet'
+      - run: npm test

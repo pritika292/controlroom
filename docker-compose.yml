@@ -1,0 +1,28 @@
+# Production compose -- joins the shared `pritika` Docker network on the VM and
+# reads ALL runtime env (DATABASE_URL, REDIS_URL, GITHUB_PAT, GITHUB_WEBHOOK_SECRET,
+# NODE_ENV) from /opt/pritika/_infra/controlroom.env. The file is written by
+# scripts/bootstrap-vm.sh on first deploy and never touched again.
+#
+# For local development use docker-compose.local.yml.
+
+networks:
+  pritika:
+    external: true
+
+services:
+  app:
+    build: .
+    container_name: controlroom
+    restart: unless-stopped
+    networks: [pritika]
+    ports:
+      - "3012:3012"
+    env_file:
+      - /opt/pritika/_infra/controlroom.env
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3012/health >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    mem_limit: 384m
