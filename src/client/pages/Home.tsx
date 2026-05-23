@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { ProjectCard } from "../components/ProjectCard.js";
+import { StatsStrip } from "../components/StatsStrip.js";
 import { useSSE } from "../hooks/useSSE.js";
 import { useStatus } from "../hooks/useStatus.js";
 
@@ -30,6 +31,8 @@ export function Home(): JSX.Element {
           Live status across every project in the portfolio.
         </p>
       </header>
+
+      <StatsStrip />
 
       {loading && <p className="mt-8 text-sm text-slate-500 dark:text-slate-400">Loading...</p>}
 

@@ -1,5 +1,7 @@
 import { useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
+import { CommitsPanel } from "../components/CommitsPanel.js";
+import { DeploysPanel } from "../components/DeploysPanel.js";
 import { Sparkline } from "../components/Sparkline.js";
 import { StatusDot } from "../components/StatusDot.js";
 import { useProjectPings, type ProjectPing } from "../hooks/useProjectPings.js";
@@ -118,8 +120,8 @@ export function Project(): JSX.Element {
       </section>
 
       <section className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <PlaceholderCard title="Recent commits" subtitle="Coming in Tier 4 (issue #19)" />
-        <PlaceholderCard title="Recent deploys" subtitle="Coming in Tier 4 (issue #21)" />
+        <CommitsPanel slug={project.slug} repo={`pritika292/${project.slug}`} />
+        <DeploysPanel slug={project.slug} />
       </section>
     </main>
   );
@@ -141,14 +143,5 @@ function StatusPill({ status }: { status: "up" | "down" | "timeout" | "error" })
     <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${cls}`}>
       {status}
     </span>
-  );
-}
-
-function PlaceholderCard({ title, subtitle }: { title: string; subtitle: string }): JSX.Element {
-  return (
-    <article className="rounded-xl border border-dashed border-slate-200 dark:border-white/10 p-5">
-      <h3 className="text-base font-semibold text-slate-900 dark:text-white">{title}</h3>
-      <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{subtitle}</p>
-    </article>
   );
 }
