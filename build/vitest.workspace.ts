@@ -12,6 +12,7 @@ export default defineWorkspace([
       // them in parallel forks would race on schema setup.
       poolOptions: { forks: { singleFork: true } },
       testTimeout: 10_000,
+      setupFiles: ["./tests/setup.server.ts"],
     },
   },
   {
