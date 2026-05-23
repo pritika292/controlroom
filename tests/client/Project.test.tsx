@@ -92,13 +92,11 @@ describe("<Project />", () => {
     });
   });
 
-  it("includes Tier 4 placeholder cards for commits and deploys", async () => {
+  it("renders commits and deploys panels", async () => {
     renderAt("/p/shortlive");
     await waitFor(() => {
       expect(screen.getByText(/Recent commits/)).toBeInTheDocument();
     });
-    expect(screen.getByText(/issue #19/)).toBeInTheDocument();
     expect(screen.getByText(/Recent deploys/)).toBeInTheDocument();
-    expect(screen.getByText(/issue #21/)).toBeInTheDocument();
   });
 });

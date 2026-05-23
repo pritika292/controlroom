@@ -9,6 +9,7 @@ import { publicStatusRouter } from "./routes/publicStatus.js";
 import { projectPingsRouter } from "./routes/projectPings.js";
 import { projectCommitsRouter } from "./routes/projectCommits.js";
 import { projectDeploysRouter } from "./routes/projectDeploys.js";
+import { publicStatsRouter } from "./routes/publicStats.js";
 import { webhooksGithubRouter } from "./routes/webhooksGithub.js";
 
 const CLIENT_DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../client");
@@ -42,6 +43,7 @@ export function createApp(): Express {
   app.use(projectPingsRouter);
   app.use(projectCommitsRouter);
   app.use(projectDeploysRouter);
+  app.use(publicStatsRouter);
 
   // Serve the built SPA when it exists (production / post-build).
   const indexHtml = path.join(CLIENT_DIST, "index.html");
