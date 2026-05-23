@@ -17,11 +17,7 @@ describe("<Sparkline />", () => {
   });
 
   it("renders N bars plus one baseline for N pings", () => {
-    const pings: Ping[] = [
-      makePing("up", 0),
-      makePing("down", 1),
-      makePing("timeout", 2),
-    ];
+    const pings: Ping[] = [makePing("up", 0), makePing("down", 1), makePing("timeout", 2)];
     const { container } = render(<Sparkline pings={pings} />);
     const rects = container.querySelectorAll("rect");
     // 3 bars + 1 baseline
@@ -61,16 +57,10 @@ describe("<Sparkline />", () => {
   });
 
   it("accessible label reflects healthy count", () => {
-    const pings: Ping[] = [
-      makePing("up", 0),
-      makePing("up", 1),
-      makePing("down", 2),
-    ];
+    const pings: Ping[] = [makePing("up", 0), makePing("up", 1), makePing("down", 2)];
     const { container } = render(<Sparkline pings={pings} />);
     const svg = container.querySelector("svg");
-    expect(svg?.getAttribute("aria-label")).toBe(
-      "Uptime sparkline: 2 of 3 pings healthy",
-    );
+    expect(svg?.getAttribute("aria-label")).toBe("Uptime sparkline: 2 of 3 pings healthy");
   });
 
   it("accessible label says no data for empty pings", () => {

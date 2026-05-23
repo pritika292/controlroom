@@ -31,19 +31,18 @@ export function Sparkline({ pings, width = 120, height = 24 }: Props): JSX.Eleme
       xmlns="http://www.w3.org/2000/svg"
     >
       {/* baseline */}
-      <rect x={0} y={height - 1} width={width} height={1} className="fill-slate-200 dark:fill-slate-700" />
+      <rect
+        x={0}
+        y={height - 1}
+        width={width}
+        height={1}
+        className="fill-slate-200 dark:fill-slate-700"
+      />
 
       {pings.map((ping, i) => {
         const x = (i / pings.length) * width;
         return (
-          <rect
-            key={i}
-            x={x}
-            y={0}
-            width={2}
-            height={height}
-            className={colorClass(ping.status)}
-          />
+          <rect key={i} x={x} y={0} width={2} height={height} className={colorClass(ping.status)} />
         );
       })}
     </svg>
