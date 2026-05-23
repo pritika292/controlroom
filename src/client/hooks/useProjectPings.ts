@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
 import type { Ping } from "../components/Sparkline.js";
 
+export interface ProjectPing extends Ping {
+  latencyMs: number | null;
+}
+
 export interface ProjectPingsState {
-  pings: Ping[];
+  pings: ProjectPing[];
   loading: boolean;
   error: string | null;
 }
@@ -21,7 +25,7 @@ export function useProjectPings(
   intervalMs: number = 30_000,
   limit: number = 200,
 ): ProjectPingsState {
-  const [pings, setPings] = useState<Ping[]>([]);
+  const [pings, setPings] = useState<ProjectPing[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(slug !== null);
 
@@ -42,7 +46,7 @@ export function useProjectPings(
         }
         const body = (await res.json()) as RawPing[];
         if (!cancelled) {
-          setPings(body.map((p) => ({ ts: p.ts, status: p.status })));
+          setPings(body.map((p) => ({ ts: p.ts, status: p.status, latencyMs: p.latencyMs })));
           setError(null);
           setLoading(false);
         }

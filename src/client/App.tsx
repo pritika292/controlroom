@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { TopBar } from "./components/TopBar.js";
 import { Home } from "./pages/Home.js";
 import { About } from "./pages/About.js";
+import { Project } from "./pages/Project.js";
 
 function NotFound(): JSX.Element {
   return (
@@ -26,6 +27,7 @@ export function App(): JSX.Element {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
+          <Route path="/p/:slug" element={<Project />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
