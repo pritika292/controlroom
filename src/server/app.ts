@@ -47,6 +47,11 @@ export function createApp(): Express {
         res.sendFile(indexHtml);
       });
     }
+    // /p/<slug> is the per-project detail page; route slug is alphanum
+    // plus dashes, 1-32 chars. Anything else falls through to a 404.
+    app.get(/^\/p\/[0-9A-Za-z-]{1,32}\/?$/, (_req, res) => {
+      res.sendFile(indexHtml);
+    });
   }
 
   return app;
