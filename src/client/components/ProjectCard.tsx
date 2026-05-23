@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Sparkline } from "./Sparkline.js";
 import { StatusDot } from "./StatusDot.js";
@@ -8,6 +8,9 @@ import type { ProjectStatus } from "../hooks/useStatus.js";
 
 interface Props {
   project: ProjectStatus;
+  // Bumped by the parent whenever an SSE status_change event mentions this
+  // project. When it bumps, the card runs a brief pulse animation.
+  flashKey?: number;
 }
 
 function lastSeenLabel(project: ProjectStatus, now: number): string {
@@ -16,7 +19,9 @@ function lastSeenLabel(project: ProjectStatus, now: number): string {
   return relativeTime(new Date(project.lastPingAt).getTime(), now).toUpperCase();
 }
 
-export function ProjectCard({ project }: Props): JSX.Element {
+const FLASH_DURATION_MS = 900;
+
+export function ProjectCard({ project, flashKey }: Props): JSX.Element {
   const { pings } = useProjectPings(project.status === "live" ? project.slug : null);
 
   const [now, setNow] = useState<number>(() => Date.now());
@@ -25,13 +30,27 @@ export function ProjectCard({ project }: Props): JSX.Element {
     return () => clearInterval(handle);
   }, []);
 
+  // When flashKey bumps, paint a brief accent ring + bg tint, then unpaint.
+  const [flashing, setFlashing] = useState(false);
+  const firstRender = useRef(true);
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    setFlashing(true);
+    const handle = setTimeout(() => setFlashing(false), FLASH_DURATION_MS);
+    return () => clearTimeout(handle);
+  }, [flashKey]);
+
   const isPlanned = project.status === "planned";
 
   const inner = (
     <article
       className={
-        "te-panel p-4 transition-colors " +
-        (isPlanned ? "border-dashed text-zinc-400 dark:text-zinc-600" : "hover:border-accent")
+        "relative te-panel p-4 transition-colors duration-700 " +
+        (isPlanned ? "border-dashed text-zinc-400 dark:text-zinc-600" : "hover:border-accent ") +
+        (flashing ? " border-accent bg-accent/5 dark:bg-accent/10" : "")
       }
     >
       <header className="flex items-center justify-between gap-3">

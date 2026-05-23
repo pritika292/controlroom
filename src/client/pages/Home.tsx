@@ -1,31 +1,58 @@
-import { useCallback } from "react";
+import { useCallback, useRef, useState } from "react";
+import { EventTicker } from "../components/EventTicker.js";
 import { IncidentBanner } from "../components/IncidentBanner.js";
 import { InfraPanel } from "../components/InfraPanel.js";
 import { ProjectCard } from "../components/ProjectCard.js";
 import { StatsStrip } from "../components/StatsStrip.js";
+import { SystemClock } from "../components/SystemClock.js";
 import { UpcomingCard } from "../components/UpcomingCard.js";
+import { useEventLog } from "../hooks/useEventLog.js";
+import { useInfra } from "../hooks/useInfra.js";
 import { useSSE } from "../hooks/useSSE.js";
 import { useStatus } from "../hooks/useStatus.js";
 
+interface StatusChangePayload {
+  slug?: string;
+}
+
 export function Home(): JSX.Element {
   const { data, error, loading, refresh } = useStatus();
+  const { infra } = useInfra();
+  const { events, onEvent: pushEvent } = useEventLog(6);
 
-  const onEvent = useCallback(
-    (eventName: string) => {
-      if (eventName === "status_change") refresh();
+  // Per-project flash counter. Bumps each time a status_change event for
+  // that slug arrives; ProjectCard observes its slug's counter via prop
+  // and runs a short pulse animation when the value changes.
+  const [flashBySlug, setFlashBySlug] = useState<Record<string, number>>({});
+  const flashRef = useRef(flashBySlug);
+  flashRef.current = flashBySlug;
+
+  const onSse = useCallback(
+    (eventName: string, data: unknown) => {
+      pushEvent(eventName, data);
+      if (eventName === "status_change") {
+        const slug = (data as StatusChangePayload).slug;
+        if (typeof slug === "string") {
+          setFlashBySlug({ ...flashRef.current, [slug]: (flashRef.current[slug] ?? 0) + 1 });
+        }
+        refresh();
+      }
     },
-    [refresh],
+    [pushEvent, refresh],
   );
-  const { connected } = useSSE("/api/stream", onEvent);
+  const { connected } = useSSE("/api/stream", onSse);
 
   return (
     <main className="max-w-7xl mx-auto px-6 lg:px-8 py-10">
       <header>
-        <div className="flex items-baseline justify-between gap-4">
+        <div className="flex items-baseline justify-between gap-4 flex-wrap">
           <h1 className="font-mono text-3xl tracking-tight text-zinc-900 dark:text-white">
             STATUS BOARD
           </h1>
-          <LiveIndicator connected={connected} />
+          <div className="flex items-baseline gap-6">
+            <SystemClock uptimeSeconds={infra?.vm.uptimeSeconds ?? null} />
+            <LiveIndicator connected={connected} />
+          </div>
         </div>
         <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400 max-w-2xl">
           Eleven projects on one VM in northcentralus. Health pings every 30s, deploys streamed in
@@ -36,6 +63,8 @@ export function Home(): JSX.Element {
       <IncidentBanner />
 
       <StatsStrip />
+
+      <EventTicker events={events} />
 
       {loading && <p className="mt-8 te-label">LOADING...</p>}
 
@@ -50,7 +79,11 @@ export function Home(): JSX.Element {
           {data
             .filter((p) => p.status === "live")
             .map((project) => (
-              <ProjectCard key={project.slug} project={project} />
+              <ProjectCard
+                key={project.slug}
+                project={project}
+                flashKey={flashBySlug[project.slug] ?? 0}
+              />
             ))}
           <UpcomingCard planned={data.filter((p) => p.status === "planned")} />
         </section>
