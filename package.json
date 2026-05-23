@@ -20,8 +20,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run -c build/vitest.config.ts",
-    "test:watch": "vitest -c build/vitest.config.ts",
-    "typecheck": "tsc --noEmit -p tsconfig.build.json"
+    "test:watch": "vitest -c build/vitest.config.ts"
   },
   "prettier": {
     "semi": true,
