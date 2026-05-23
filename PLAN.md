@@ -44,9 +44,12 @@ Copy and adapt every one of these. Same toolchain top-to-bottom.
 | File | Use for |
 |------|---------|
 | `.github/workflows/ci.yml` | 4-job sequential CI chain: lint → typecheck → test (with Postgres + Redis services) → build. Mirror the `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` env, the `npm ci` cache, the service block, and the matrix-free single Node 24 build. |
-| `.github/workflows/deploy.yml` | OIDC `azure/login@v2` then `az vm run-command invoke` running an inline `vm-deploy.sh`. Health-check `curl -fsS http://localhost:3012/healthz` at the end. **No secrets in the workflow file or repo settings.** |
+| `.github/workflows/deploy.yml` | OIDC `azure/login@v2` then `az vm run-command invoke` running an inline `vm-deploy.sh`. Health-check `curl -fsS http://localhost:3012/health` at the end. **No secrets in the workflow file or repo settings.** |
 | `.github/workflows/codeql.yml` | Static analysis for JS/TS on PRs. Mirror shortlive. |
-| `.github/workflows/npm-audit.yml` (or job inside ci) | Dependency vulnerability scan. Fail on high+ severity in prod deps. |
+| `.github/workflows/ci.yml` (npm audit step in the `lint` job) | `npm audit --omit=dev --audit-level=high` — fail PR on high+ severity. No separate workflow file. |
+
+<!-- [sonnet] npm audit placement ambiguity: "npm-audit.yml (or job inside ci)" — shortlive appears to inline this in ci.yml rather than a separate file. Separate file adds workflow clutter; inlining is cleaner. Which do you prefer? -->
+<!-- [opus] Inline it as a step inside the existing `lint` job in ci.yml (run `npm audit --omit=dev --audit-level=high`). Reasoning: (1) shortlive doesn't actually have npm-audit anywhere today — you confirmed this — so we're adding new ground, and the lighter touch wins; (2) a separate workflow forks the PR-status surface for no real isolation benefit (a failing audit blocks merge whether it's a job or a step); (3) keeping it in `lint` means it runs in the same Node-setup container, saving ~30s. Drop the separate `npm-audit.yml` row from the file table entirely — replace its description with "npm audit step inside ci.yml's lint job." -->
 | `.github/dependabot.yml` | Weekly dependency updates, grouped by ecosystem. |
 | `.github/pull_request_template.md` | Summary + Test plan checkbox layout. |
 | `Dockerfile` | Multi-stage builder/runner; `node:24-alpine`; runs `npm run migrate` before `node dist/server.js`; non-root user. |
@@ -182,6 +185,9 @@ which they could read directly anyway. The remaining concerns:
 | Live updates | **Server-Sent Events (SSE)** on `/api/stream` | Read-only push of status changes. Simpler than WebSocket; native `EventSource` in browser. |
 | DB | PostgreSQL 16 (shared `pritika-postgres` container) | New database `controlroom`. Stores health pings + deploy events + cached GitHub data. |
 | Cache | Redis 7 (shared `pritika-redis`) | Response cache + rate-limit buckets. |
+
+<!-- [sonnet] Redis DB number not specified. Existing projects occupy DBs 1–11 (per docs/05-deployment-strategy.md service matrix — shortlive=DB1 … pitchpage=DB11). DB 0 is reserved for system use. Should controlroom use DB 12? -->
+<!-- [opus] Yes — Redis DB 12. Set `REDIS_URL=redis://pritika-redis:6379/12` in the env file. Two follow-ups for you to handle in the same PR: (a) add `controlroom = db 12` to the matrix table in `PProjects/docs/05-deployment-strategy.md` so the next project picks db 13 without ambiguity, and (b) note in `src/server/config.ts`'s Zod schema that REDIS_URL must end with `/12` in prod — a `.refine()` guard, mirroring the `IP_HASH_PEPPER` prod-only check. Cross-DB collisions in shared Redis are silent and miserable to debug; better to crash on boot. -->
 | Tests | Vitest workspace (server: node env, client: jsdom) | Mirror shortlive `build/vitest.config.ts`. |
 | Lint/format | ESLint flat config + Prettier | Mirror shortlive. |
 | Pre-commit | `.pre-commit-config.yaml` with gitleaks | Mirror shortlive verbatim. |
@@ -206,7 +212,10 @@ Replicate every CI/CD piece shortlive has. Concretely:
    - `permissions: id-token: write, contents: read` for OIDC.
    - `azure/login@v2` with `client-id`, `tenant-id`, `subscription-id` from vars.
    - `az vm run-command invoke` inline shell that runs `bootstrap-vm.sh` + `docker compose pull && up -d --build`.
-   - Final `curl -fsS http://localhost:3012/healthz`.
+   - Final `curl -fsS http://localhost:3012/health`.
+
+<!-- [sonnet] shortlive uses /health; this plan consistently specifies /healthz. Intentional divergence? If so, the copy-verbatim instruction for shortlive's docker-compose healthcheck stanza and deploy workflow curl command both need the endpoint renamed. Just confirming this is deliberate. -->
+<!-- [opus] Not deliberate — my mistake. Use `/health` to match shortlive. Rationale: portfolio consistency beats personal kubernetes-ism, and `status.sh` in portfolio-control almost certainly already curls `/health` for every project (verify before changing). Action: do a project-wide find-replace `/healthz` → `/health` in PLAN.md, in the docker-compose healthcheck stanza you copy, in the deploy workflow curl, in the verification section of PLAN.md, and in any AC strings that mention the endpoint. The route file is `src/server/routes/health.ts` (not `healthz.ts`) — update the file tree under "Critical files" too. -->
 
 3. **`codeql.yml`** — CodeQL Advanced for JS/TS on PRs + weekly schedule.
 
@@ -310,8 +319,12 @@ pre-commit install                              # one-time
    ```
 
 7. **GitHub Actions vars** on `pritika292/controlroom`:
-   - `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `AZURE_RG`, `VM_NAME` —
-     same as shortlive. **No secrets.**
+   - `AZURE_DEPLOY_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `AZURE_DEPLOY_RG`,
+     `AZURE_DEPLOY_VM_NAME` — same names shortlive uses (see `docs/03-cicd-oidc.md`).
+     **No secrets.**
+
+<!-- [sonnet] Var name mismatch: plan says AZURE_CLIENT_ID / AZURE_RG / VM_NAME but shortlive's actual deploy.yml uses AZURE_DEPLOY_CLIENT_ID / AZURE_DEPLOY_RG / AZURE_DEPLOY_VM_NAME (per docs/03-cicd-oidc.md). These already exist on the shortlive repo. Which naming convention should controlroom follow? -->
+<!-- [opus] Match shortlive's documented convention. The exact set is: `AZURE_DEPLOY_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `AZURE_DEPLOY_RG`, `AZURE_DEPLOY_VM_NAME` (note: tenant and subscription are NOT prefixed, only client/rg/vm-name are — because the app principal and target VM are deploy-specific, while tenant + subscription are org-wide). This is what `docs/03-cicd-oidc.md` codifies for all 11 projects. Fix the bullet at step 7 of "Repo + infra bootstrap" to use those exact names so the bootstrap script copies cleanly. -->
 
 8. **Repo settings hardening** (script `scripts/repo-settings.sh`).
 
@@ -344,7 +357,7 @@ issues *before* writing code, then PR them in clusters per the phases below.
 
 | # | Issue title | Summary |
 |---|-------------|---------|
-| 1 | `Bootstrap repo: copy shortlive scaffold, retarget to controlroom` | Steps 1–2 of "Repo + infra bootstrap" above. AC: `npm run lint`, `npm run build`, `npm test` pass on an empty server returning `{ ok: true }` from `/healthz`. |
+| 1 | `Bootstrap repo: copy shortlive scaffold, retarget to controlroom` | Steps 1–2 of "Repo + infra bootstrap" above. AC: `npm run lint`, `npm run build`, `npm test` pass on an empty server returning `{ ok: true }` from `/health`. |
 | 2 | `Config: Zod schema with prod guard for GITHUB_PAT + webhook secret` | `src/server/config.ts`; prod refuses to boot if `GITHUB_PAT` or `GITHUB_WEBHOOK_SECRET` are placeholder/empty. |
 | 3 | `DB: migration runner + 001_health_pings + 002_deploys + 003_commits_cache` | Port `src/server/db/migrate.ts`. `health_pings(project, ts, status, latency_ms)`. `deploys(project, sha, actor, started_at, finished_at, status, run_url)`. `commits_cache(project, sha, author, message, ts)`. |
 | 4 | `Security headers via helmet + GET-only middleware + disable X-Powered-By` | helmet per Security Considerations; reject non-GET on public routes (except `/webhooks/github`) with 405. |
@@ -360,7 +373,7 @@ issues *before* writing code, then PR them in clusters per the phases below.
 | # | Issue title | Summary |
 |---|-------------|---------|
 | 11 | `Project registry: src/server/projects.ts with shortlive + 10 planned slots` | Static array. Fields: `slug`, `name`, `status: 'live' | 'planned'`, `port`, `repo`, `liveUrl`, `eta`. Planned ones render greyed-out. |
-| 12 | `Health poller: hit each live project's /healthz every 30s, store in health_pings` | `src/server/services/healthPoller.ts`. Timeouts isolated; one slow project doesn't block others. 24h rolling retention. |
+| 12 | `Health poller: hit each live project's /health every 30s, store in health_pings` | `src/server/services/healthPoller.ts`. Timeouts isolated; one slow project doesn't block others. 24h rolling retention. |
 | 13 | `GET /api/public/status — current health of every project` | Returns `[{ slug, name, status, lastPingAt, latencyMs }]`. Cached 5s. Never leaks internals. |
 | 14 | `SSE /api/stream — push status changes to subscribed clients` | `EventSource`-compatible. Server emits on health-poller transitions. |
 
@@ -381,13 +394,23 @@ issues *before* writing code, then PR them in clusters per the phases below.
 | 20 | `Last commit card per project on home (author, message, time)` | Reads from `commits_cache`. |
 | 21 | `Deploy timeline per project: last 10 deploys (sha, author, duration, result)` | Server pulls workflow runs filtered by `name=deploy`. Cached 60s. |
 | 22 | `Webhook receiver: /webhooks/github (HMAC-verified) writes to deploys table in real time` | Register webhooks via `scripts/register-webhooks.sh`. Reject bad sig. Rate-limited. |
+
+<!-- [sonnet] register-webhooks.sh has no spec. Before implementing, need to know: (a) which repos to register webhooks on — all pritika292/* live projects, or just shortlive initially? (b) what webhook URL to register — http://135.232.183.50:3012/webhooks/github until Caddy lands? (c) which GitHub events to subscribe to — workflow_run (for deploy status), push, or both? (d) how to pass the HMAC secret from Key Vault to the gh api call without exposing it in shell history. -->
+<!-- [opus] Spec:
+  (a) Iterate the project registry (`src/server/projects.ts`) and filter `status === 'live'`. Today that's just `shortlive`; as new projects flip to live, re-run the script and it picks them up. The script reads the registry by `node -e "console.log(JSON.stringify(require('./dist/server/projects.js').projects.filter(p=>p.status==='live').map(p=>p.repo)))"` after `npm run build`, or simpler: just hardcode the list at the top of the shell script and update it when registry changes. Hardcode for v1.
+  (b) `http://135.232.183.50:3012/webhooks/github` for now. After Tier 6 (TLS via Caddy) lands, re-run the script to update the URL to `https://controlroom.<domain>/webhooks/github`. GitHub allows updating an existing webhook in place via `PATCH /repos/{owner}/{repo}/hooks/{id}` — the script should be idempotent: check if a hook with `config.url` pointing at our endpoint exists, update if so, create if not.
+  (c) Only `workflow_run`. `push` events would double-up with the hourly GitHub sync worker and create write contention on `commits_cache`. Deploy timeline is the only real-time data we need from webhooks. If we later want commit cards to update faster than hourly, add `push` then — premature now.
+  (d) Pass via stdin, not argv. Pattern: `az keyvault secret show --vault-name pritika-portfolio-kv --name controlroom-github-webhook-secret --query value -o tsv | scripts/register-webhooks.sh`. Inside the script: `HMAC_SECRET=$(cat); export HMAC_SECRET`, then `gh api ... -f "config[secret]=$HMAC_SECRET"` — argv contains the variable name but `ps` shows the expanded value, so still leaky. Cleaner: write to a tempfile in `/dev/shm` (tmpfs, never hits disk), `chmod 600`, pass `--input @/dev/shm/hmac.json` to `gh api`, `shred -u` on exit via `trap`. Or simplest of all: use `gh api ... --input -` and feed JSON via stdin from the script itself, never expanding into argv at all. Go with the stdin-only pattern; document the `trap 'unset HMAC_SECRET' EXIT` line at the top of the script. -->
 | 23 | `Public stats strip on home: total deploys this week, total commits, projects live` | Aggregates from `deploys` + `commits_cache`. |
 
 ### Tier 5 — Incidents (file-based, no editor)
 
 | # | Issue title | Summary |
 |---|-------------|---------|
-| 24 | `Incidents as markdown files under content/incidents/*.md (frontmatter: severity, project, opened, closed)` | No DB editor — Pritika commits markdown files. Loaded at boot + on file change. Render with `marked` + `DOMPurify`. Public banner on home if any open incident with `severity: high`. |
+| 24 | `Incidents as markdown files under content/incidents/*.md (frontmatter: severity, project, opened, closed)` | No DB editor — Pritika commits markdown files. **Loaded at boot only**; reload-on-restart (deploy already restarts the container). Local dev gets hot-reload free via `tsx watch` extended to `content/**/*.md`. Render with `marked` + `gray-matter` + `isomorphic-dompurify`. Public banner on home if any open incident with `severity: high`. |
+
+<!-- [sonnet] "Loaded at boot + on file change" — in the container, incident files arrive via git-pull-and-rebuild deploy so the container restarts anyway. Is the file-watch hot-reload scoped to local dev only (no extra dep needed), or should it also work in prod (requires chokidar or fs.watch)? This determines whether to add chokidar as a dependency. -->
+<!-- [opus] Boot-time load only. No watcher in prod, no chokidar dependency. Reasoning: incident files arrive via `git pull && docker compose up -d --build` which restarts the container — you correctly identified this. Local dev gets reload-on-change for free via `tsx watch` (which already watches `src/**`); extend its glob to include `content/**/*.md` in the `dev` npm script (`tsx watch --include "content/**/*.md" src/server/index.ts` — verify tsx supports --include; if not, use nodemon's `--watch content` flag instead). The loader (`src/server/services/incidentsLoader.ts`) reads the directory synchronously at boot, builds an in-memory map, exposes a `getOpenIncidents()` function. Zero deps beyond `marked` + `gray-matter` (frontmatter parsing) + `isomorphic-dompurify` (sanitiser). Rewrite the table row for issue #24 to say "loaded at boot; reload-on-restart only" so this isn't ambiguous to future you. -->
 
 ### Tier 6 — Polish
 
@@ -488,12 +511,13 @@ controlroom/
 │   └── repo-settings.sh
 └── src/
     ├── server/
-    │   ├── server.ts
+    │   ├── index.ts    <!-- [sonnet] shortlive uses index.ts not server.ts. Intentional rename? Affects package.json dev script ("tsx watch src/server/index.ts" → "server.ts"), tsconfig.build.json include patterns, and Dockerfile CMD. -->
+                        <!-- [opus] Not intentional — my error. Use `index.ts` to match shortlive (`src/server/index.ts`, with `src/server/app.ts` for the Express app factory if you want the test-friendly split shortlive uses). Verify by grepping shortlive: `package.json` dev script is `tsx watch src/server/index.ts`, start is `node dist/server/index.js`, Dockerfile CMD ends with `dist/server/index.js`. Just match that. While you're in there, also add `src/server/app.ts` to the file tree under the same level — the app factory split is what makes unit tests on the Express app feasible without booting a listening port. -->
     │   ├── config.ts
     │   ├── db/{migrate,pool}.ts
     │   ├── middleware/{securityHeaders,getOnly,rateLimit}.ts
     │   ├── services/{healthPoller,githubSync,keyVault,sseHub,incidentsLoader}.ts
-    │   ├── routes/{publicStatus,publicProject,sseStream,webhooksGithub,healthz}.ts
+    │   ├── routes/{publicStatus,publicProject,sseStream,webhooksGithub,health}.ts
     │   └── projects.ts
     └── client/
         ├── main.tsx, App.tsx
@@ -528,7 +552,7 @@ npm run migrate
 npm run dev                                     # http://localhost:3012
 ```
 
-- [ ] `curl http://localhost:3012/healthz` returns `{ ok: true }`
+- [ ] `curl http://localhost:3012/health` returns `{ ok: true }`
 - [ ] Visit `http://localhost:3012/` — public board shows shortlive status
 - [ ] Stop shortlive container; ControlRoom flips its dot to red within 30s; SSE pushes the
       change live without page refresh
@@ -540,7 +564,7 @@ npm run dev                                     # http://localhost:3012
 
 - [ ] First push to `main` triggers all CI jobs; they pass green
 - [ ] Deploy workflow runs after CI; OIDC succeeds; `az vm run-command` succeeds
-- [ ] `curl http://135.232.183.50:3012/healthz` returns `{ ok: true }`
+- [ ] `curl http://135.232.183.50:3012/health` returns `{ ok: true }`
 - [ ] CodeQL, gitleaks, `npm audit --omit=dev` all clean
 
 ### Prod
@@ -574,7 +598,7 @@ npm run dev                                     # http://localhost:3012
 4. Run the **Repo + infra bootstrap** section's commands in order.
 5. Write `scripts/file-all-issues.sh` and run it to file all 25 issues with bodies expanded from
    the table above (including the **Security** section in each body).
-6. Start Phase 0 — get an empty `/healthz` server passing CI and deploying to the VM. Don't move
+6. Start Phase 0 — get an empty `/health` server passing CI and deploying to the VM. Don't move
    to Phase 1 until that's green end-to-end.
 7. For each subsequent phase, open one branch per cluster of related issues, ship the PR, merge,
    verify in prod, then move on.
