@@ -95,4 +95,62 @@ describeIfDb("githubSync", () => {
     const { rows } = await client.query("SELECT count(*) AS n FROM commits_cache");
     expect(Number(rows[0]!.n)).toBe(0);
   });
+
+  it("backfills deploys from the GitHub actions runs API", async () => {
+    await client.query("TRUNCATE deploys");
+
+    // Two endpoints: /commits returns an empty array; /actions/runs returns
+    // two deploy runs and one CI run that should be filtered out.
+    const fetchSpy = vi.fn(async (url: string) => {
+      if (url.includes("/commits")) {
+        return { ok: true, json: async () => [] };
+      }
+      if (url.includes("/actions/runs")) {
+        return {
+          ok: true,
+          json: async () => ({
+            workflow_runs: [
+              {
+                id: 1,
+                name: "deploy",
+                head_sha: "a".repeat(40),
+                status: "completed",
+                conclusion: "success",
+                html_url: "https://github.com/pritika292/shortlive/actions/runs/1",
+                run_started_at: "2026-05-23T08:00:00Z",
+                updated_at: "2026-05-23T08:02:15Z",
+                actor: { login: "pritika292" },
+              },
+              {
+                id: 2,
+                name: "ci",
+                head_sha: "b".repeat(40),
+                status: "completed",
+                conclusion: "success",
+                html_url: "https://github.com/pritika292/shortlive/actions/runs/2",
+                run_started_at: "2026-05-23T07:00:00Z",
+                updated_at: "2026-05-23T07:01:30Z",
+                actor: { login: "pritika292" },
+              },
+            ],
+          }),
+        };
+      }
+      return { ok: false, status: 404, json: async () => ({}) };
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+
+    await syncOnce();
+
+    const { rows } = await client.query<{
+      project: string;
+      sha: string;
+      status: string;
+      actor: string;
+    }>("SELECT project, sha, status, actor FROM deploys");
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.project).toBe("shortlive");
+    expect(rows[0]!.status).toBe("success");
+    expect(rows[0]!.actor).toBe("pritika292");
+  });
 });
