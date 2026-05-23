@@ -2,6 +2,7 @@ import "dotenv/config";
 import { config } from "./config.js";
 import { createApp } from "./app.js";
 import { startHealthPoller, stopHealthPoller } from "./services/healthPoller.js";
+import { startGithubSync, stopGithubSync } from "./services/githubSync.js";
 import { closeRedis } from "./services/redis.js";
 
 const PORT = config.PORT;
@@ -12,12 +13,14 @@ const server = app.listen(PORT, () => {
   console.log(`[server] listening on :${config.PORT} (env=${config.NODE_ENV})`);
   if (config.NODE_ENV !== "test") {
     startHealthPoller();
+    startGithubSync();
   }
 });
 
 function shutdown(signal: NodeJS.Signals): void {
   console.log(`Received ${signal}; shutting down`);
   void stopHealthPoller()
+    .then(() => stopGithubSync())
     .then(() => closeRedis())
     .then(() => {
       server.close(() => process.exit(0));

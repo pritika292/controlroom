@@ -7,6 +7,7 @@ import { getOnly } from "./middleware/getOnly.js";
 import { sseRouter } from "./routes/sseStream.js";
 import { publicStatusRouter } from "./routes/publicStatus.js";
 import { projectPingsRouter } from "./routes/projectPings.js";
+import { projectCommitsRouter } from "./routes/projectCommits.js";
 
 const CLIENT_DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../client");
 
@@ -30,9 +31,10 @@ export function createApp(): Express {
   // SSE hub — must come before the SPA fallback so /api/stream isn't swallowed.
   app.use(sseRouter);
 
-  // Public status + per-project ping routes.
+  // Public status + per-project ping/commit routes.
   app.use(publicStatusRouter);
   app.use(projectPingsRouter);
+  app.use(projectCommitsRouter);
 
   // Serve the built SPA when it exists (production / post-build).
   const indexHtml = path.join(CLIENT_DIST, "index.html");
