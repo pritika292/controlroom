@@ -305,18 +305,18 @@ pre-commit install                              # one-time
      }'
    ```
 
-5. **Key Vault secrets** (one-time):
+5. **Key Vault secret — GitHub PAT only** (one-time):
    ```sh
    az keyvault secret set --vault-name pritika-portfolio-kv \
      --name controlroom-github-pat --value "<fine-grained PAT, read-only on pritika292/*>"
-   az keyvault secret set --vault-name pritika-portfolio-kv \
-     --name controlroom-github-webhook-secret --value "$(openssl rand -hex 32)"
    ```
+   The **webhook HMAC secret is NOT in KV** — `bootstrap-vm.sh` generates it on the VM
+   with `openssl rand -hex 32`, preserves-if-exists across deploys, and writes it into
+   `/opt/pritika/_infra/controlroom.env`. This mirrors shortlive's pattern for
+   `SESSION_SECRET` / `IP_HASH_PEPPER` (see `shortlive/scripts/bootstrap-vm.sh`). The
+   PAT is the only secret that can't be generated locally, so it lives in KV.
 
-6. **Database** (one-time, on shared Postgres):
-   ```sh
-   docker exec -it pritika-postgres createdb -U postgres controlroom
-   ```
+6. **Database** — handled by `bootstrap-vm.sh` (idempotent `CREATE DATABASE controlroom IF NOT EXISTS`-style check). No manual step needed; first deploy creates it.
 
 7. **GitHub Actions vars** on `pritika292/controlroom`:
    - `AZURE_DEPLOY_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `AZURE_DEPLOY_RG`,
@@ -400,7 +400,7 @@ issues *before* writing code, then PR them in clusters per the phases below.
   (a) Iterate the project registry (`src/server/projects.ts`) and filter `status === 'live'`. Today that's just `shortlive`; as new projects flip to live, re-run the script and it picks them up. The script reads the registry by `node -e "console.log(JSON.stringify(require('./dist/server/projects.js').projects.filter(p=>p.status==='live').map(p=>p.repo)))"` after `npm run build`, or simpler: just hardcode the list at the top of the shell script and update it when registry changes. Hardcode for v1.
   (b) `http://135.232.183.50:3012/webhooks/github` for now. After Tier 6 (TLS via Caddy) lands, re-run the script to update the URL to `https://controlroom.<domain>/webhooks/github`. GitHub allows updating an existing webhook in place via `PATCH /repos/{owner}/{repo}/hooks/{id}` — the script should be idempotent: check if a hook with `config.url` pointing at our endpoint exists, update if so, create if not.
   (c) Only `workflow_run`. `push` events would double-up with the hourly GitHub sync worker and create write contention on `commits_cache`. Deploy timeline is the only real-time data we need from webhooks. If we later want commit cards to update faster than hourly, add `push` then — premature now.
-  (d) Pass via stdin, not argv. Pattern: `az keyvault secret show --vault-name pritika-portfolio-kv --name controlroom-github-webhook-secret --query value -o tsv | scripts/register-webhooks.sh`. Inside the script: `HMAC_SECRET=$(cat); export HMAC_SECRET`, then `gh api ... -f "config[secret]=$HMAC_SECRET"` — argv contains the variable name but `ps` shows the expanded value, so still leaky. Cleaner: write to a tempfile in `/dev/shm` (tmpfs, never hits disk), `chmod 600`, pass `--input @/dev/shm/hmac.json` to `gh api`, `shred -u` on exit via `trap`. Or simplest of all: use `gh api ... --input -` and feed JSON via stdin from the script itself, never expanding into argv at all. Go with the stdin-only pattern; document the `trap 'unset HMAC_SECRET' EXIT` line at the top of the script. -->
+  (d) **Source of the secret has changed:** the webhook HMAC is now generated on the VM by `bootstrap-vm.sh` (mirrors shortlive's `SESSION_SECRET` pattern) and written to `/opt/pritika/_infra/controlroom.env`. The KV-stored secret is **gone**. So `register-webhooks.sh` must pull the value from the VM rather than KV. Cleanest mechanic: run the registration as a one-shot via `az vm run-command invoke` so the script executes on the VM with direct file access; the script reads `GITHUB_WEBHOOK_SECRET=` from `/opt/pritika/_infra/controlroom.env` (mode 600, readable only as root which `run-command` is), then `gh api ... --input -` with the secret fed via stdin so it never appears in `argv` / `ps`. The `gh` CLI on the VM authenticates with a short-lived install token sourced from a fine-grained PAT in the developer's local `gh auth status`, or — simpler — run the registration from the developer machine and have the script SSH-grep the secret out of the VM (`ssh azureuser@135.232.183.50 'sudo grep ^GITHUB_WEBHOOK_SECRET= /opt/pritika/_infra/controlroom.env | cut -d= -f2-'`) into a `/dev/shm/hmac.json` tempfile with `trap 'shred -u $tmpfile' EXIT`. Pick whichever fits the implementing subagent's environment better; the constraint is: secret never expands into `argv`, never lands on disk outside tmpfs, and the developer machine's shell history doesn't contain it. -->
 | 23 | `Public stats strip on home: total deploys this week, total commits, projects live` | Aggregates from `deploys` + `commits_cache`. |
 
 ### Tier 5 — Incidents (file-based, no editor)
