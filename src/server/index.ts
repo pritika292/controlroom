@@ -3,9 +3,15 @@ import { config } from "./config.js";
 import { createApp } from "./app.js";
 import { startHealthPoller, stopHealthPoller } from "./services/healthPoller.js";
 import { startGithubSync, stopGithubSync } from "./services/githubSync.js";
+import { loadIncidents } from "./services/incidentsLoader.js";
 import { closeRedis } from "./services/redis.js";
 
 const PORT = config.PORT;
+
+// Load incidents from content/incidents/*.md once at boot. Container restart
+// on deploy is the reload mechanism in production.
+const incidents = loadIncidents();
+console.log(`[incidents] loaded ${incidents.length} from disk`);
 
 const app = createApp();
 
