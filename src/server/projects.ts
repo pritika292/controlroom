@@ -12,7 +12,13 @@ export interface Project {
   eta?: string; // only for planned
 }
 
-const HOST = "http://135.232.183.50";
+// Every live project is reverse-proxied by Caddy at <slug>.pritika.studio
+// with a Let's Encrypt cert. The legacy http://135.232.183.50:<port> form
+// still works internally for the deploy health probe and ad-hoc curl
+// diagnostics, but the public URL is HTTPS through Caddy.
+function liveUrlFor(slug: string): string {
+  return `https://${slug}.pritika.studio`;
+}
 
 function code(n: number): string {
   return `CR-${String(n).padStart(2, "0")}`;
@@ -30,7 +36,7 @@ const _projects: Project[] = [
     status: "live",
     port: 3010,
     repo: "pritika292/shortlive",
-    liveUrl: `${HOST}:3010`,
+    liveUrl: liveUrlFor("shortlive"),
   },
   {
     slug: "hookrelay",
