@@ -20,7 +20,7 @@ describe("project registry", () => {
     const p = getProject("shortlive");
     expect(p).toBeDefined();
     expect(p?.status).toBe("live");
-    expect(p?.liveUrl).toBe("http://135.232.183.50:3010");
+    expect(p?.liveUrl).toBe("https://shortlive.pritika.studio");
     expect(p?.repo).toBe("pritika292/shortlive");
   });
 

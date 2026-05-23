@@ -4,7 +4,7 @@
 
 [![ci](https://github.com/pritika292/controlroom/actions/workflows/ci.yml/badge.svg)](https://github.com/pritika292/controlroom/actions/workflows/ci.yml)
 [![deploy](https://github.com/pritika292/controlroom/actions/workflows/deploy.yml/badge.svg)](https://github.com/pritika292/controlroom/actions/workflows/deploy.yml)
-[![demo](https://img.shields.io/badge/demo-live-success)](http://135.232.183.50:3012/)
+[![demo](https://img.shields.io/badge/demo-live-success)](https://controlroom.pritika.studio/)
 [![codeql](https://github.com/pritika292/controlroom/actions/workflows/codeql.yml/badge.svg)](https://github.com/pritika292/controlroom/actions/workflows/codeql.yml)
 
 ![TypeScript](https://img.shields.io/badge/-TypeScript-3178C6?logo=typescript&logoColor=white)
@@ -22,7 +22,7 @@
 ![Vitest](https://img.shields.io/badge/-Vitest-6E9F18?logo=vitest&logoColor=white)
 ![Helmet](https://img.shields.io/badge/-Helmet-1F2937)
 
-**Live**: <http://135.232.183.50:3012/>  ·  every project carries a device code (CR-01 ... CR-11) in the Teenage Engineering catalog vocabulary.
+**Live**: <https://controlroom.pritika.studio/>  ·  every project carries a device code (CR-01 ... CR-11) in the Teenage Engineering catalog vocabulary.
 
 ---
 
