@@ -1,19 +1,8 @@
 import { ThemeToggle } from "./ThemeToggle.js";
 
-function LogoMark(): JSX.Element {
-  return (
-    <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-500 text-white shadow-lg shadow-violet-500/30 text-sm font-bold select-none">
-      CR
-    </span>
-  );
-}
-
 function NavLink({ href, children }: { href: string; children: React.ReactNode }): JSX.Element {
   return (
-    <a
-      href={href}
-      className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04] transition-all"
-    >
+    <a href={href} className="te-label hover:text-zinc-900 dark:hover:text-white transition-colors">
       {children}
     </a>
   );
@@ -21,21 +10,21 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
 
 export function TopBar(): JSX.Element {
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-200/70 dark:border-white/5 bg-white/75 dark:bg-slate-950/75 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-slate-950/60">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-4 flex items-center gap-6">
-        <a href="/" className="flex items-center gap-2.5" aria-label="controlroom home">
-          <LogoMark />
-          <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
-            controlroom
+    <header className="sticky top-0 z-30 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/95 dark:bg-zinc-950/95 backdrop-blur supports-[backdrop-filter]:bg-zinc-50/80 dark:supports-[backdrop-filter]:bg-zinc-950/80">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 h-14 flex items-center gap-8">
+        <a href="/" className="flex items-center gap-3" aria-label="controlroom home">
+          <span aria-hidden className="inline-block h-4 w-4 bg-accent" />
+          <span className="font-mono text-sm tracking-[0.2em] text-zinc-900 dark:text-white">
+            CONTROLROOM
           </span>
         </a>
 
-        <nav className="hidden md:flex items-center gap-1 text-sm ml-2">
-          <NavLink href="/">Home</NavLink>
-          <NavLink href="/about">About</NavLink>
+        <nav className="hidden md:flex items-center gap-6">
+          <NavLink href="/">STATUS</NavLink>
+          <NavLink href="/about">ABOUT</NavLink>
         </nav>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto">
           <ThemeToggle />
         </div>
       </div>

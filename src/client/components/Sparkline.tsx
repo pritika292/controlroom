@@ -10,7 +10,7 @@ interface Props {
 }
 
 function colorClass(status: Ping["status"]): string {
-  if (status === "up") return "fill-emerald-500";
+  if (status === "up") return "fill-accent";
   if (status === "timeout") return "fill-amber-500";
   return "fill-rose-500";
 }
@@ -36,7 +36,7 @@ export function Sparkline({ pings, width = 120, height = 24 }: Props): JSX.Eleme
         y={height - 1}
         width={width}
         height={1}
-        className="fill-slate-200 dark:fill-slate-700"
+        className="fill-zinc-200 dark:fill-zinc-800"
       />
 
       {pings.map((ping, i) => {

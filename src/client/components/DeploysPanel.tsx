@@ -6,38 +6,33 @@ interface Props {
 }
 
 function statusClass(status: DeployItem["status"]): string {
-  if (status === "success")
-    return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300";
-  if (status === "in_progress" || status === "queued")
-    return "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300";
-  if (status === "cancelled")
-    return "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300";
-  return "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300";
+  if (status === "success") return "text-accent border-accent";
+  if (status === "in_progress" || status === "queued") return "text-sky-600 border-sky-500";
+  if (status === "cancelled") return "text-zinc-500 border-zinc-400";
+  return "text-rose-600 border-rose-500";
 }
 
 function formatDuration(ms: number | null): string {
   if (ms === null) return "-";
   const s = Math.round(ms / 1000);
-  if (s < 60) return `${s}s`;
-  return `${Math.floor(s / 60)}m ${s % 60}s`;
+  if (s < 60) return `${s}S`;
+  return `${Math.floor(s / 60)}M ${s % 60}S`;
 }
 
 export function DeploysPanel({ slug }: Props): JSX.Element {
   const { deploys, loading, error } = useProjectDeploys(slug);
 
   return (
-    <article className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 p-5">
-      <h3 className="text-base font-semibold text-slate-900 dark:text-white">Recent deploys</h3>
+    <article className="te-panel p-5">
+      <p className="te-label">RECENT DEPLOYS</p>
       {loading && deploys.length === 0 ? (
-        <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Loading...</p>
+        <p className="mt-3 te-label">LOADING...</p>
       ) : error !== null ? (
-        <p className="mt-3 text-sm text-rose-600 dark:text-rose-400">{error}</p>
+        <p className="mt-3 te-label text-rose-500">{error}</p>
       ) : deploys.length === 0 ? (
-        <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-          No deploys yet. Webhooks land here when the deploy workflow runs.
-        </p>
+        <p className="mt-3 te-label">NO DEPLOYS YET</p>
       ) : (
-        <ul className="mt-3 divide-y divide-slate-100 dark:divide-white/5">
+        <ul className="mt-3 divide-y divide-zinc-100 dark:divide-zinc-900">
           {deploys.map((d) => (
             <DeployRow key={`${d.sha}-${d.startedAt}`} deploy={d} />
           ))}
@@ -51,18 +46,18 @@ function DeployRow({ deploy }: { deploy: DeployItem }): JSX.Element {
   const content = (
     <>
       <div className="flex items-center justify-between gap-2">
-        <span className="font-mono text-xs text-slate-700 dark:text-slate-300">
+        <span className="font-mono text-xs text-zinc-700 dark:text-zinc-300">
           {deploy.sha.slice(0, 7)}
         </span>
         <span
-          className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${statusClass(deploy.status)}`}
+          className={`inline-block px-2 py-0.5 border text-[10px] uppercase ${statusClass(deploy.status)}`}
         >
           {deploy.status}
         </span>
       </div>
-      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-        {deploy.actor !== null && <span>{deploy.actor} &middot; </span>}
-        {relativeTime(deploy.startedAt)} &middot; {formatDuration(deploy.durationMs)}
+      <p className="mt-1 font-mono text-[11px] text-zinc-500 dark:text-zinc-400">
+        {deploy.actor !== null && <span>{deploy.actor} / </span>}
+        {relativeTime(deploy.startedAt).toUpperCase()} / {formatDuration(deploy.durationMs)}
       </p>
     </>
   );

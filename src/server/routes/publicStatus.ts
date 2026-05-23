@@ -40,7 +40,9 @@ publicStatusRouter.get("/api/public/status", async (_req, res) => {
     return {
       slug: p.slug,
       name: p.name,
+      code: p.code,
       status: p.status,
+      eta: p.eta ?? null,
       lastStatus: ping?.status ?? null,
       lastPingAt: ping ? ping.ts.toISOString() : null,
       latencyMs: ping?.latency_ms ?? null,

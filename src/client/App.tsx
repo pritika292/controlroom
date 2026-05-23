@@ -6,14 +6,11 @@ import { Project } from "./pages/Project.js";
 
 function NotFound(): JSX.Element {
   return (
-    <main className="max-w-7xl mx-auto px-6 lg:px-8 py-16">
-      <h1 className="text-4xl font-bold tracking-tight text-slate-900 dark:text-white">404</h1>
-      <p className="mt-4 text-lg text-slate-600 dark:text-slate-400">Page not found.</p>
-      <a
-        href="/"
-        className="mt-6 inline-block text-violet-600 dark:text-violet-400 hover:underline"
-      >
-        Back to home
+    <main className="max-w-3xl mx-auto px-6 lg:px-8 py-16">
+      <p className="te-label">ERROR / 404</p>
+      <h1 className="mt-2 font-mono text-3xl text-zinc-900 dark:text-white">Page not found.</h1>
+      <a href="/" className="mt-6 inline-block te-label text-accent hover:underline">
+        BACK TO STATUS BOARD
       </a>
     </main>
   );
@@ -22,7 +19,7 @@ function NotFound(): JSX.Element {
 export function App(): JSX.Element {
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-white">
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-white">
         <TopBar />
         <Routes>
           <Route path="/" element={<Home />} />

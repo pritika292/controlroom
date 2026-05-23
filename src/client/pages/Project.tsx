@@ -11,12 +11,13 @@ import { relativeTime } from "../lib/relativeTime.js";
 function NotFound({ slug }: { slug: string }): JSX.Element {
   return (
     <main className="max-w-3xl mx-auto px-6 lg:px-8 py-16">
-      <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+      <p className="te-label">ERROR / UNKNOWN PROJECT</p>
+      <h1 className="mt-2 font-mono text-3xl text-zinc-900 dark:text-white">
         No project named &ldquo;{slug}&rdquo;
       </h1>
-      <p className="mt-3 text-slate-600 dark:text-slate-400">
-        Check the URL, or head back to the{" "}
-        <Link to="/" className="text-violet-600 dark:text-violet-400 hover:underline">
+      <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">
+        Check the URL or head back to the{" "}
+        <Link to="/" className="text-accent hover:underline">
           status board
         </Link>
         .
@@ -25,18 +26,16 @@ function NotFound({ slug }: { slug: string }): JSX.Element {
   );
 }
 
-function PlannedHero({ project }: { project: ProjectStatus & { eta?: string } }): JSX.Element {
+function PlannedHero({ project }: { project: ProjectStatus }): JSX.Element {
   return (
     <main className="max-w-3xl mx-auto px-6 lg:px-8 py-16">
-      <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{project.name}</h1>
-      <p className="mt-3 text-slate-600 dark:text-slate-400">
-        This project is on the roadmap but not live yet.
+      <p className="te-label">
+        {project.code} / PLANNED{project.eta !== null ? ` / ${project.eta.toUpperCase()}` : ""}
       </p>
-      <Link
-        to="/"
-        className="mt-6 inline-block text-violet-600 dark:text-violet-400 hover:underline"
-      >
-        Back to the status board
+      <h1 className="mt-2 font-mono text-3xl text-zinc-900 dark:text-white">{project.name}</h1>
+      <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">On the roadmap; not live yet.</p>
+      <Link to="/" className="mt-6 inline-block te-label text-accent hover:underline">
+        BACK TO STATUS BOARD
       </Link>
     </main>
   );
@@ -52,7 +51,7 @@ export function Project(): JSX.Element {
   if (loading && data === null) {
     return (
       <main className="max-w-7xl mx-auto px-6 lg:px-8 py-16">
-        <p className="text-sm text-slate-500 dark:text-slate-400">Loading...</p>
+        <p className="te-label">LOADING...</p>
       </main>
     );
   }
@@ -62,56 +61,52 @@ export function Project(): JSX.Element {
   if (project.status === "planned") return <PlannedHero project={project} />;
 
   return (
-    <main className="max-w-5xl mx-auto px-6 lg:px-8 py-12">
-      <header className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <StatusDot project={project} />
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{project.name}</h1>
+    <main className="max-w-5xl mx-auto px-6 lg:px-8 py-10">
+      <header className="flex items-baseline justify-between gap-4">
+        <div>
+          <p className="te-label">{project.code}</p>
+          <div className="mt-1 flex items-center gap-3">
+            <StatusDot project={project} />
+            <h1 className="font-mono text-3xl text-zinc-900 dark:text-white">{project.name}</h1>
+          </div>
         </div>
-        <Link
-          to="/"
-          className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-        >
-          &larr; All projects
+        <Link to="/" className="te-label text-zinc-500 hover:text-accent">
+          {"<-"} STATUS BOARD
         </Link>
       </header>
 
-      <section className="mt-8 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 p-6">
-        <h2 className="text-sm font-medium text-slate-600 dark:text-slate-400">Last 24 hours</h2>
+      <section className="mt-8 te-panel p-5">
+        <p className="te-label">LAST 24 HOURS</p>
         <div className="mt-3">
           <Sparkline pings={pings} width={720} height={64} />
         </div>
       </section>
 
-      <section className="mt-6 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 p-6">
-        <h2 className="text-sm font-medium text-slate-600 dark:text-slate-400">
-          Recent pings ({pings.length})
-        </h2>
+      <section className="mt-3 te-panel p-5">
+        <p className="te-label">RECENT PINGS / {pings.length}</p>
         {pingsLoading && pings.length === 0 ? (
-          <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Loading...</p>
+          <p className="mt-3 te-label">LOADING...</p>
         ) : pings.length === 0 ? (
-          <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-            No pings recorded in the last 24 hours.
-          </p>
+          <p className="mt-3 te-label">NO PINGS IN LAST 24H</p>
         ) : (
-          <table className="mt-3 w-full text-sm">
+          <table className="mt-3 w-full font-mono text-xs">
             <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                <th className="py-2 pr-4 font-medium">when</th>
-                <th className="py-2 pr-4 font-medium">status</th>
-                <th className="py-2 font-medium">latency</th>
+              <tr className="text-left te-label">
+                <th className="py-2 pr-4">WHEN</th>
+                <th className="py-2 pr-4">STATUS</th>
+                <th className="py-2">LATENCY</th>
               </tr>
             </thead>
             <tbody>
               {[...pings].reverse().map((p, i) => (
-                <tr key={`${p.ts}-${i}`} className="border-t border-slate-100 dark:border-white/5">
-                  <td className="py-2 pr-4 text-slate-700 dark:text-slate-300">
+                <tr key={`${p.ts}-${i}`} className="border-t border-zinc-100 dark:border-zinc-900">
+                  <td className="py-2 pr-4 text-zinc-700 dark:text-zinc-300">
                     {relativeTime(p.ts)}
                   </td>
                   <td className="py-2 pr-4">
                     <StatusPill status={p.status} />
                   </td>
-                  <td className="py-2 text-slate-700 dark:text-slate-300">{pingLatency(p)}</td>
+                  <td className="py-2 text-zinc-700 dark:text-zinc-300">{pingLatency(p)}</td>
                 </tr>
               ))}
             </tbody>
@@ -119,7 +114,7 @@ export function Project(): JSX.Element {
         )}
       </section>
 
-      <section className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <section className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
         <CommitsPanel slug={project.slug} repo={`pritika292/${project.slug}`} />
         <DeploysPanel slug={project.slug} />
       </section>
@@ -128,20 +123,18 @@ export function Project(): JSX.Element {
 }
 
 function pingLatency(p: ProjectPing): string {
-  if (typeof p.latencyMs === "number") return `${p.latencyMs} ms`;
-  return p.status === "timeout" ? "timeout" : "-";
+  if (typeof p.latencyMs === "number") return `${p.latencyMs}MS`;
+  return p.status === "timeout" ? "TIMEOUT" : "-";
 }
 
 function StatusPill({ status }: { status: "up" | "down" | "timeout" | "error" }): JSX.Element {
   const cls =
     status === "up"
-      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+      ? "text-accent border-accent"
       : status === "timeout"
-        ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
-        : "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300";
+        ? "text-amber-600 border-amber-500 dark:text-amber-400"
+        : "text-rose-600 border-rose-500 dark:text-rose-400";
   return (
-    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${cls}`}>
-      {status}
-    </span>
+    <span className={`inline-block px-2 py-0.5 border text-[10px] uppercase ${cls}`}>{status}</span>
   );
 }

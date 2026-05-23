@@ -20,7 +20,7 @@ describe("<StatsStrip />", () => {
     );
     render(<StatsStrip />);
     await waitFor(() => {
-      expect(screen.getByText("1 / 11")).toBeInTheDocument();
+      expect(screen.getByText("1/11")).toBeInTheDocument();
     });
     expect(screen.getByText("7")).toBeInTheDocument();
     expect(screen.getByText("42")).toBeInTheDocument();

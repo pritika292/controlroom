@@ -46,7 +46,7 @@ export function ThemeToggle(): JSX.Element {
       onClick={() => setPreference(isDark ? "light" : "dark")}
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-      className="inline-flex items-center justify-center rounded-full p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors"
+      className="inline-flex items-center justify-center border border-zinc-300 dark:border-zinc-700 h-9 w-9 text-zinc-700 dark:text-zinc-300 hover:border-accent hover:text-accent transition-colors"
     >
       {isDark ? <SunIcon /> : <MoonIcon />}
     </button>

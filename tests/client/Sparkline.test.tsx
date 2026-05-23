@@ -29,7 +29,7 @@ describe("<Sparkline />", () => {
     const bars = Array.from(container.querySelectorAll("rect")).filter(
       (r) => r.getAttribute("height") === "24" && r.getAttribute("y") === "0",
     );
-    expect(bars[0].getAttribute("class")).toContain("fill-emerald-500");
+    expect(bars[0].getAttribute("class")).toContain("fill-accent");
   });
 
   it("applies rose class to down pings", () => {

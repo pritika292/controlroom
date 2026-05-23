@@ -1,3 +1,33 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html {
+    /* Disable kerning ligatures that look fancy on numbers; we want the
+       mono numbers to align in columns. */
+    font-variant-numeric: tabular-nums;
+  }
+  body {
+    background: #fafafa;
+    color: #18181b;
+  }
+  html.dark body {
+    background: #0a0a0a;
+    color: #fafafa;
+  }
+}
+
+@layer components {
+  /* A reusable hairline border that flips with theme. Matches the matte
+     "device panel" feel of teenage.engineering catalog pages. */
+  .te-panel {
+    @apply border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950;
+  }
+  .te-label {
+    @apply uppercase tracking-[0.18em] text-[10px] font-medium text-zinc-500 dark:text-zinc-400;
+  }
+  .te-code {
+    @apply font-mono text-xs text-zinc-500 dark:text-zinc-400;
+  }
+}

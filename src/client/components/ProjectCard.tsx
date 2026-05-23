@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { Sparkline } from "./Sparkline.js";
 import { StatusDot } from "./StatusDot.js";
 import { useProjectPings } from "../hooks/useProjectPings.js";
@@ -10,16 +11,14 @@ interface Props {
 }
 
 function lastSeenLabel(project: ProjectStatus, now: number): string {
-  if (project.status === "planned") return "planned";
-  if (project.lastPingAt === null) return "no pings yet";
-  return relativeTime(new Date(project.lastPingAt).getTime(), now);
+  if (project.status === "planned") return project.eta ?? "PLANNED";
+  if (project.lastPingAt === null) return "NO PINGS YET";
+  return relativeTime(new Date(project.lastPingAt).getTime(), now).toUpperCase();
 }
 
 export function ProjectCard({ project }: Props): JSX.Element {
-  // Only fetch pings for live projects; planned ones get an empty sparkline.
   const { pings } = useProjectPings(project.status === "live" ? project.slug : null);
 
-  // Re-render every second so "3s ago" stays accurate without a server roundtrip.
   const [now, setNow] = useState<number>(() => Date.now());
   useEffect(() => {
     const handle = setInterval(() => setNow(Date.now()), 1_000);
@@ -28,35 +27,45 @@ export function ProjectCard({ project }: Props): JSX.Element {
 
   const isPlanned = project.status === "planned";
 
-  return (
+  const inner = (
     <article
       className={
-        "rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 p-5 transition-opacity " +
-        (isPlanned ? "opacity-60" : "")
+        "te-panel p-4 transition-colors " +
+        (isPlanned ? "border-dashed text-zinc-400 dark:text-zinc-600" : "hover:border-accent")
       }
     >
       <header className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <StatusDot project={project} />
-          <h3 className="text-base font-semibold text-slate-900 dark:text-white">{project.name}</h3>
-        </div>
-        {isPlanned && (
-          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-            planned
-          </span>
-        )}
+        <span className="te-code">{project.code}</span>
+        <StatusDot project={project} />
       </header>
 
-      <div className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+      <h3
+        className={
+          "mt-3 font-mono text-lg " +
+          (isPlanned ? "text-zinc-400 dark:text-zinc-600" : "text-zinc-900 dark:text-white")
+        }
+      >
+        {project.name}
+      </h3>
+
+      <div className="mt-1 te-label">
         {lastSeenLabel(project, now)}
         {project.latencyMs !== null && project.status === "live" && (
-          <span className="ml-2">({project.latencyMs} ms)</span>
+          <span className="ml-2 normal-case tracking-normal font-mono">{project.latencyMs}MS</span>
         )}
       </div>
 
       <div className="mt-4">
-        <Sparkline pings={pings} width={240} height={28} />
+        <Sparkline pings={pings} width={280} height={28} />
       </div>
     </article>
+  );
+
+  // Planned projects don't link anywhere yet; live projects open the detail page.
+  if (isPlanned) return inner;
+  return (
+    <Link to={`/p/${project.slug}`} className="block">
+      {inner}
+    </Link>
   );
 }

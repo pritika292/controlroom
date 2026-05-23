@@ -3,7 +3,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 export interface ProjectStatus {
   slug: string;
   name: string;
+  code: string; // device-catalog code, e.g. "CR-01"
   status: "live" | "planned";
+  eta: string | null;
   lastStatus: "up" | "down" | "timeout" | "error" | null;
   lastPingAt: string | null;
   latencyMs: number | null;

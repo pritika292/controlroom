@@ -29,7 +29,7 @@ describe("<DeploysPanel />", () => {
       expect(screen.getByText(/success/)).toBeInTheDocument();
     });
     expect(screen.getByText(/deadbee/)).toBeInTheDocument();
-    expect(screen.getByText(/1m 0s/)).toBeInTheDocument();
+    expect(screen.getByText(/1M 0S/)).toBeInTheDocument();
   });
 
   it("shows an empty-state when there are no deploys", async () => {
