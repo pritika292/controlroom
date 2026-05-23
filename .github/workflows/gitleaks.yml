@@ -7,17 +7,27 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
 
+# gitleaks/gitleaks-action now requires a paid license for org-owned repos
+# and trips a "missing gitleaks license" failure even on personal accounts
+# under certain GITHUB_TOKEN scopes. Run the OSS binary directly instead.
 jobs:
   scan:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          fetch-depth: 0 # full history so gitleaks can diff the entire branch
+          fetch-depth: 0
 
-      - name: Run gitleaks
-        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install gitleaks
+        run: |
+          set -euo pipefail
+          VERSION="8.21.0"
+          curl -fsSL -o gitleaks.tar.gz \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_x64.tar.gz"
+          tar -xzf gitleaks.tar.gz gitleaks
+          sudo mv gitleaks /usr/local/bin/
+          gitleaks version
+
+      - name: Scan repository history
+        run: gitleaks detect --no-banner --redact --exit-code 1
