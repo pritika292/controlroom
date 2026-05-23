@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import { DeployFrequencyChart } from "../components/DeployFrequencyChart.js";
 import { EventTicker } from "../components/EventTicker.js";
 import { IncidentBanner } from "../components/IncidentBanner.js";
 import { InfraPanel } from "../components/InfraPanel.js";
@@ -63,6 +64,8 @@ export function Home(): JSX.Element {
       <IncidentBanner />
 
       <StatsStrip />
+
+      <DeployFrequencyChart />
 
       <EventTicker events={events} />
 
