@@ -4,6 +4,7 @@ import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { securityHeaders } from "./middleware/securityHeaders.js";
 import { getOnly } from "./middleware/getOnly.js";
+import { sseRouter } from "./routes/sseStream.js";
 
 const CLIENT_DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../client");
 
@@ -23,6 +24,9 @@ export function createApp(): Express {
   app.get("/health", (_req, res) => {
     res.json({ ok: true });
   });
+
+  // SSE hub — must come before the SPA fallback so /api/stream isn't swallowed.
+  app.use(sseRouter);
 
   // Serve the built SPA when it exists (production / post-build).
   const indexHtml = path.join(CLIENT_DIST, "index.html");
