@@ -3,8 +3,10 @@ import { Link, useParams } from "react-router-dom";
 import { CommitsPanel } from "../components/CommitsPanel.js";
 import { DeploysPanel } from "../components/DeploysPanel.js";
 import { LatencyChart } from "../components/LatencyChart.js";
+import { LatencyHistogram } from "../components/LatencyHistogram.js";
 import { Sparkline } from "../components/Sparkline.js";
 import { StatusDot } from "../components/StatusDot.js";
+import { StatusSegments } from "../components/StatusSegments.js";
 import { useProjectPings, type ProjectPing } from "../hooks/useProjectPings.js";
 import { useStatus, type ProjectStatus } from "../hooks/useStatus.js";
 import { relativeTime } from "../lib/relativeTime.js";
@@ -146,20 +148,31 @@ export function Project(): JSX.Element {
         <Stat label="PINGS" value={String(stats.total)} />
       </dl>
 
-      {/* Up/down sparkline */}
+      {/* Up/down sparkline + status time split */}
       <section className="mt-3 te-panel p-5">
         <p className="te-label">LAST 24 HOURS</p>
         <div className="mt-3">
           <Sparkline pings={pings} width={720} height={48} />
         </div>
+        <div className="mt-5">
+          <StatusSegments pings={pings} />
+        </div>
       </section>
 
-      {/* Latency over time */}
-      <section className="mt-3 te-panel p-5">
-        <p className="te-label">LATENCY / 24H</p>
-        <div className="mt-3">
-          <LatencyChart pings={pings} width={720} height={120} />
-        </div>
+      {/* Latency over time + distribution side-by-side */}
+      <section className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+        <article className="te-panel p-5">
+          <p className="te-label">LATENCY / 24H</p>
+          <div className="mt-3">
+            <LatencyChart pings={pings} width={420} height={120} />
+          </div>
+        </article>
+        <article className="te-panel p-5">
+          <p className="te-label">LATENCY DISTRIBUTION</p>
+          <div className="mt-3">
+            <LatencyHistogram pings={pings} width={420} height={120} />
+          </div>
+        </article>
       </section>
 
       {/* Recent pings sits beside commits + deploys in a tight 3-col row */}
