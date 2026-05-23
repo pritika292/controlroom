@@ -34,16 +34,14 @@ describeIfDb("githubSync", () => {
   });
 
   it("upserts commits for each live project on success", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => [
-          fakeCommit("a".repeat(40), "first", "2026-05-20T00:00:00Z"),
-          fakeCommit("b".repeat(40), "second\nlong body", "2026-05-21T00:00:00Z"),
-        ],
-      }),
-    );
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [
+        fakeCommit("a".repeat(40), "first", "2026-05-20T00:00:00Z"),
+        fakeCommit("b".repeat(40), "second\nlong body", "2026-05-21T00:00:00Z"),
+      ],
+    });
+    vi.stubGlobal("fetch", fetchSpy);
 
     await syncOnce();
 
@@ -59,6 +57,15 @@ describeIfDb("githubSync", () => {
     expect(rows[0]!.author).toBe("pritika292");
     // Subject only; body trimmed.
     expect(rows[1]!.message).toBe("second");
+
+    // GITHUB_PAT is set in tests/setup.server.ts, so the Authorization
+    // header should be present. Asserting this protects the inverse case
+    // (no PAT -> no Authorization header) by proving the conditional is
+    // wired to that env var rather than always-on.
+    const init = fetchSpy.mock.calls[0]?.[1] as RequestInit | undefined;
+    const headers = init?.headers as Record<string, string> | undefined;
+    expect(headers?.["Authorization"]).toMatch(/^Bearer github_pat_/);
+    expect(headers?.["User-Agent"]).toBe("controlroom-sync");
   });
 
   it("is idempotent: re-running with the same commits does not duplicate", async () => {
