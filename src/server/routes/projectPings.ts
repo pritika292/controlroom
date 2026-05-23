@@ -50,13 +50,22 @@ projectPingsRouter.get("/api/public/projects/:slug/pings", async (req, res) => {
   }
 
   const pool = getPool();
+  // Take the NEWEST `limit` pings in the 24h window, then re-order ascending
+  // so the sparkline and latency chart draw left-to-right with the freshest
+  // data at the right edge. A plain `ORDER BY ts ASC LIMIT N` returns the
+  // OLDEST N -- the original bug that surfaced as "the table shows pings
+  // from 9 hours ago" after the poller had been running long enough to
+  // fill out the 24h window.
   const { rows } = await pool.query<PingRow>(
-    `SELECT ts, status, latency_ms
-     FROM health_pings
-     WHERE project = $1
-       AND ts >= now() - interval '24 hours'
-     ORDER BY ts ASC
-     LIMIT $2`,
+    `SELECT ts, status, latency_ms FROM (
+       SELECT ts, status, latency_ms
+       FROM health_pings
+       WHERE project = $1
+         AND ts >= now() - interval '24 hours'
+       ORDER BY ts DESC
+       LIMIT $2
+     ) latest
+     ORDER BY ts ASC`,
     [slug, limit],
   );
 
