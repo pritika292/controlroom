@@ -3,7 +3,7 @@ import { relativeTime } from "../lib/relativeTime.js";
 
 interface Props {
   slug: string;
-  repo: string; // "pritika292/<slug>"
+  repo: string;
 }
 
 function commitUrl(repo: string, sha: string): string {
@@ -14,18 +14,16 @@ export function CommitsPanel({ slug, repo }: Props): JSX.Element {
   const { commits, loading, error } = useProjectCommits(slug);
 
   return (
-    <article className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 p-5">
-      <h3 className="text-base font-semibold text-slate-900 dark:text-white">Recent commits</h3>
+    <article className="te-panel p-5">
+      <p className="te-label">RECENT COMMITS</p>
       {loading && commits.length === 0 ? (
-        <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Loading...</p>
+        <p className="mt-3 te-label">LOADING...</p>
       ) : error !== null ? (
-        <p className="mt-3 text-sm text-rose-600 dark:text-rose-400">{error}</p>
+        <p className="mt-3 te-label text-rose-500">{error}</p>
       ) : commits.length === 0 ? (
-        <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-          No commits cached yet. The sync worker runs hourly.
-        </p>
+        <p className="mt-3 te-label">NO COMMITS CACHED YET</p>
       ) : (
-        <ul className="mt-3 divide-y divide-slate-100 dark:divide-white/5">
+        <ul className="mt-3 divide-y divide-zinc-100 dark:divide-zinc-900">
           {commits.map((c) => (
             <CommitRow key={c.sha} repo={repo} commit={c} />
           ))}
@@ -44,13 +42,13 @@ function CommitRow({ repo, commit }: { repo: string; commit: CommitItem }): JSX.
         rel="noreferrer"
         className="block group"
       >
-        <p className="text-sm text-slate-900 dark:text-slate-100 group-hover:underline">
+        <p className="text-sm text-zinc-900 dark:text-zinc-100 group-hover:text-accent">
           {commit.message}
         </p>
-        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-          <span className="font-mono">{commit.sha.slice(0, 7)}</span>
-          {commit.author !== null && <span> by {commit.author}</span>}
-          <span> &middot; {relativeTime(commit.ts)}</span>
+        <p className="mt-1 font-mono text-[11px] text-zinc-500 dark:text-zinc-400">
+          {commit.sha.slice(0, 7)}
+          {commit.author !== null && <span> / {commit.author}</span>}
+          <span> / {relativeTime(commit.ts).toUpperCase()}</span>
         </p>
       </a>
     </li>

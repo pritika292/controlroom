@@ -4,14 +4,14 @@ import { MemoryRouter } from "react-router-dom";
 import { TopBar } from "../../src/client/components/TopBar.js";
 
 describe("<TopBar />", () => {
-  it("renders Home and About nav links", () => {
+  it("renders STATUS and ABOUT nav links", () => {
     render(
       <MemoryRouter>
         <TopBar />
       </MemoryRouter>,
     );
-    expect(screen.getByRole("link", { name: /^Home$/i })).toHaveAttribute("href", "/");
-    expect(screen.getByRole("link", { name: /^About$/i })).toHaveAttribute("href", "/about");
+    expect(screen.getByRole("link", { name: /^STATUS$/ })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: /^ABOUT$/ })).toHaveAttribute("href", "/about");
   });
 
   it("renders the ThemeToggle button", () => {
@@ -25,12 +25,12 @@ describe("<TopBar />", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders the controlroom logo text", () => {
+  it("renders the CONTROLROOM logo text", () => {
     render(
       <MemoryRouter>
         <TopBar />
       </MemoryRouter>,
     );
-    expect(screen.getByText("controlroom")).toBeInTheDocument();
+    expect(screen.getByText("CONTROLROOM")).toBeInTheDocument();
   });
 });

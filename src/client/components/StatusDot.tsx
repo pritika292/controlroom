@@ -4,25 +4,21 @@ interface Props {
   project: ProjectStatus;
 }
 
-// Color matrix for the dot:
-//   planned        → grey
-//   live + no ping → grey (poller hasn't hit it yet)
-//   live + up      → emerald
-//   live + timeout → amber
-//   live + down/error → rose
+// Square indicator in the TE catalog tradition: hard edges, single color.
+// Status -> color:
+//   planned        -> zinc (off)
+//   live + no ping -> zinc
+//   live + up      -> accent orange (on)
+//   live + timeout -> amber
+//   live + down/error -> rose
 
-function dotClasses(project: ProjectStatus): string {
+function squareClasses(project: ProjectStatus): string {
   if (project.status === "planned" || project.lastStatus === null) {
-    return "bg-slate-300 dark:bg-slate-600";
+    return "bg-zinc-300 dark:bg-zinc-700";
   }
-  if (project.lastStatus === "up") return "bg-emerald-500";
+  if (project.lastStatus === "up") return "bg-accent";
   if (project.lastStatus === "timeout") return "bg-amber-500";
   return "bg-rose-500";
-}
-
-function ringClasses(project: ProjectStatus): string {
-  if (project.lastStatus === "up") return "bg-emerald-400/40";
-  return "bg-transparent";
 }
 
 export function StatusDot({ project }: Props): JSX.Element {
@@ -34,14 +30,10 @@ export function StatusDot({ project }: Props): JSX.Element {
         : project.lastStatus;
 
   return (
-    <span className="relative inline-flex h-3 w-3" role="img" aria-label={`status: ${label}`}>
-      <span
-        aria-hidden
-        className={`absolute inset-0 rounded-full ${ringClasses(project)} animate-ping`}
-      />
-      <span
-        className={`relative inline-block h-3 w-3 rounded-full transition-colors duration-200 ${dotClasses(project)}`}
-      />
-    </span>
+    <span
+      role="img"
+      aria-label={`status: ${label}`}
+      className={`inline-block h-3 w-3 transition-colors duration-200 ${squareClasses(project)}`}
+    />
   );
 }

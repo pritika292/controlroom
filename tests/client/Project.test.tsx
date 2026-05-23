@@ -6,7 +6,9 @@ import { Project } from "../../src/client/pages/Project.js";
 const STATUS_SHORTLIVE = {
   slug: "shortlive",
   name: "shortlive",
+  code: "CR-01",
   status: "live",
+  eta: null,
   lastStatus: "up",
   lastPingAt: new Date(Date.now() - 5_000).toISOString(),
   latencyMs: 50,
@@ -14,7 +16,9 @@ const STATUS_SHORTLIVE = {
 const STATUS_EDGEFLAG = {
   slug: "edgeflag",
   name: "edgeflag",
+  code: "CR-04",
   status: "planned",
+  eta: "Q3 2026",
   lastStatus: null,
   lastPingAt: null,
   latencyMs: null,
@@ -64,8 +68,8 @@ describe("<Project />", () => {
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: "shortlive" })).toBeInTheDocument();
     });
-    expect(screen.getByText(/Last 24 hours/i)).toBeInTheDocument();
-    expect(screen.getByText(/Recent pings/i)).toBeInTheDocument();
+    expect(screen.getByText(/LAST 24 HOURS/)).toBeInTheDocument();
+    expect(screen.getByText(/RECENT PINGS/)).toBeInTheDocument();
   });
 
   it("renders a recent-pings table with one row per ping", async () => {
@@ -82,7 +86,7 @@ describe("<Project />", () => {
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: "edgeflag" })).toBeInTheDocument();
     });
-    expect(screen.getByText(/not live yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/on the roadmap/i)).toBeInTheDocument();
   });
 
   it("shows a not-found page for an unknown slug", async () => {
@@ -95,8 +99,8 @@ describe("<Project />", () => {
   it("renders commits and deploys panels", async () => {
     renderAt("/p/shortlive");
     await waitFor(() => {
-      expect(screen.getByText(/Recent commits/)).toBeInTheDocument();
+      expect(screen.getByText(/RECENT COMMITS/)).toBeInTheDocument();
     });
-    expect(screen.getByText(/Recent deploys/)).toBeInTheDocument();
+    expect(screen.getByText(/RECENT DEPLOYS/)).toBeInTheDocument();
   });
 });
