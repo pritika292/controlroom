@@ -7,7 +7,12 @@ const STATUS_SHORTLIVE = {
   slug: "shortlive",
   name: "shortlive",
   code: "CR-01",
+  tagline: "URL shortener with sub-second analytics.",
+  description: "Click on a short link, watch the dashboard update.",
+  tech: ["TypeScript", "Express", "Redis"],
   status: "live",
+  repo: "pritika292/shortlive",
+  liveUrl: "http://example.test:3010",
   eta: null,
   lastStatus: "up",
   lastPingAt: new Date(Date.now() - 5_000).toISOString(),
@@ -17,7 +22,12 @@ const STATUS_EDGEFLAG = {
   slug: "edgeflag",
   name: "edgeflag",
   code: "CR-04",
+  tagline: "Feature flag control room.",
+  description: "Boolean rollouts.",
+  tech: ["TypeScript"],
   status: "planned",
+  repo: "pritika292/edgeflag",
+  liveUrl: null,
   eta: "Q3 2026",
   lastStatus: null,
   lastPingAt: null,
@@ -70,6 +80,31 @@ describe("<Project />", () => {
     });
     expect(screen.getByText(/LAST 24 HOURS/)).toBeInTheDocument();
     expect(screen.getByText(/RECENT PINGS/)).toBeInTheDocument();
+    expect(screen.getByText(/URL shortener/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /OPEN LIVE SITE/ })).toHaveAttribute(
+      "href",
+      "http://example.test:3010",
+    );
+    expect(screen.getByRole("link", { name: /VIEW SOURCE/ })).toHaveAttribute(
+      "href",
+      "https://github.com/pritika292/shortlive",
+    );
+  });
+
+  it("renders the stats row (uptime, avg, p99, pings)", async () => {
+    renderAt("/p/shortlive");
+    await waitFor(() => {
+      expect(screen.getByText(/UPTIME \/ 24H/)).toBeInTheDocument();
+    });
+    expect(screen.getByText(/AVG LATENCY/)).toBeInTheDocument();
+    expect(screen.getByText(/P99 LATENCY/)).toBeInTheDocument();
+  });
+
+  it("renders the LATENCY / 24H chart", async () => {
+    renderAt("/p/shortlive");
+    await waitFor(() => {
+      expect(screen.getByText(/LATENCY \/ 24H/)).toBeInTheDocument();
+    });
   });
 
   it("renders a recent-pings table with one row per ping", async () => {
@@ -86,7 +121,7 @@ describe("<Project />", () => {
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: "edgeflag" })).toBeInTheDocument();
     });
-    expect(screen.getByText(/on the roadmap/i)).toBeInTheDocument();
+    expect(screen.getByText(/Feature flag control room|Feature flags\./i)).toBeInTheDocument();
   });
 
   it("shows a not-found page for an unknown slug", async () => {

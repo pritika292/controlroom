@@ -2,11 +2,13 @@ import { useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 import { CommitsPanel } from "../components/CommitsPanel.js";
 import { DeploysPanel } from "../components/DeploysPanel.js";
+import { LatencyChart } from "../components/LatencyChart.js";
 import { Sparkline } from "../components/Sparkline.js";
 import { StatusDot } from "../components/StatusDot.js";
 import { useProjectPings, type ProjectPing } from "../hooks/useProjectPings.js";
 import { useStatus, type ProjectStatus } from "../hooks/useStatus.js";
 import { relativeTime } from "../lib/relativeTime.js";
+import { pingStats } from "../lib/pingStats.js";
 
 function NotFound({ slug }: { slug: string }): JSX.Element {
   return (
@@ -33,8 +35,23 @@ function PlannedHero({ project }: { project: ProjectStatus }): JSX.Element {
         {project.code} / PLANNED{project.eta !== null ? ` / ${project.eta.toUpperCase()}` : ""}
       </p>
       <h1 className="mt-2 font-mono text-3xl text-zinc-900 dark:text-white">{project.name}</h1>
-      <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">On the roadmap; not live yet.</p>
-      <Link to="/" className="mt-6 inline-block te-label text-accent hover:underline">
+      <p className="mt-3 text-zinc-700 dark:text-zinc-300">{project.tagline}</p>
+      <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">{project.description}</p>
+
+      {project.tech.length > 0 && (
+        <div className="mt-6 flex flex-wrap gap-1">
+          {project.tech.map((t) => (
+            <span
+              key={t}
+              className="te-code border border-zinc-300 dark:border-zinc-700 px-2 py-0.5"
+            >
+              {t}
+            </span>
+          ))}
+        </div>
+      )}
+
+      <Link to="/" className="mt-8 inline-block te-label text-accent hover:underline">
         BACK TO STATUS BOARD
       </Link>
     </main>
@@ -44,9 +61,10 @@ function PlannedHero({ project }: { project: ProjectStatus }): JSX.Element {
 export function Project(): JSX.Element {
   const { slug = "" } = useParams<{ slug: string }>();
   const { data, loading } = useStatus();
-  const { pings, loading: pingsLoading } = useProjectPings(slug, 30_000, 100);
+  const { pings, loading: pingsLoading } = useProjectPings(slug, 30_000, 200);
 
   const project = useMemo(() => data?.find((p) => p.slug === slug), [data, slug]);
+  const stats = useMemo(() => pingStats(pings), [pings]);
 
   if (loading && data === null) {
     return (
@@ -62,26 +80,89 @@ export function Project(): JSX.Element {
 
   return (
     <main className="max-w-5xl mx-auto px-6 lg:px-8 py-10">
-      <header className="flex items-baseline justify-between gap-4">
-        <div>
-          <p className="te-label">{project.code}</p>
-          <div className="mt-1 flex items-center gap-3">
-            <StatusDot project={project} />
-            <h1 className="font-mono text-3xl text-zinc-900 dark:text-white">{project.name}</h1>
-          </div>
+      <Link to="/" className="te-label text-zinc-500 hover:text-accent">
+        {"<-"} STATUS BOARD
+      </Link>
+
+      {/* Project info header */}
+      <header className="mt-4 te-panel p-6">
+        <p className="te-label">{project.code}</p>
+        <div className="mt-2 flex items-center gap-3">
+          <StatusDot project={project} />
+          <h1 className="font-mono text-3xl text-zinc-900 dark:text-white">{project.name}</h1>
         </div>
-        <Link to="/" className="te-label text-zinc-500 hover:text-accent">
-          {"<-"} STATUS BOARD
-        </Link>
+        <p className="mt-3 text-zinc-700 dark:text-zinc-300">{project.tagline}</p>
+        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">{project.description}</p>
+
+        {project.tech.length > 0 && (
+          <div className="mt-4 flex flex-wrap gap-1">
+            {project.tech.map((t) => (
+              <span
+                key={t}
+                className="te-code border border-zinc-300 dark:border-zinc-700 px-2 py-0.5"
+              >
+                {t}
+              </span>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-5 flex flex-wrap gap-2">
+          {project.liveUrl !== null && (
+            <a
+              href={project.liveUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="te-label border border-accent text-accent px-3 py-1.5 hover:bg-accent hover:text-white transition-colors"
+            >
+              OPEN LIVE SITE -&gt;
+            </a>
+          )}
+          <a
+            href={`https://github.com/${project.repo}`}
+            target="_blank"
+            rel="noreferrer"
+            className="te-label border border-zinc-400 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 px-3 py-1.5 hover:border-zinc-900 dark:hover:border-white transition-colors"
+          >
+            VIEW SOURCE -&gt;
+          </a>
+        </div>
       </header>
 
-      <section className="mt-8 te-panel p-5">
+      {/* Stats row over the last 24h */}
+      <dl className="mt-3 grid grid-cols-2 md:grid-cols-4 te-panel divide-x divide-zinc-200 dark:divide-zinc-800">
+        <Stat
+          label="UPTIME / 24H"
+          value={stats.uptimePct === null ? "-" : `${stats.uptimePct.toFixed(1)}%`}
+        />
+        <Stat
+          label="AVG LATENCY"
+          value={stats.avgLatencyMs === null ? "-" : `${Math.round(stats.avgLatencyMs)}MS`}
+        />
+        <Stat
+          label="P99 LATENCY"
+          value={stats.p99LatencyMs === null ? "-" : `${Math.round(stats.p99LatencyMs)}MS`}
+        />
+        <Stat label="PINGS" value={String(stats.total)} />
+      </dl>
+
+      {/* Up/down sparkline */}
+      <section className="mt-3 te-panel p-5">
         <p className="te-label">LAST 24 HOURS</p>
         <div className="mt-3">
-          <Sparkline pings={pings} width={720} height={64} />
+          <Sparkline pings={pings} width={720} height={48} />
         </div>
       </section>
 
+      {/* Latency over time */}
+      <section className="mt-3 te-panel p-5">
+        <p className="te-label">LATENCY / 24H</p>
+        <div className="mt-3">
+          <LatencyChart pings={pings} width={720} height={120} />
+        </div>
+      </section>
+
+      {/* Recent pings table */}
       <section className="mt-3 te-panel p-5">
         <p className="te-label">RECENT PINGS / {pings.length}</p>
         {pingsLoading && pings.length === 0 ? (
@@ -98,27 +179,42 @@ export function Project(): JSX.Element {
               </tr>
             </thead>
             <tbody>
-              {[...pings].reverse().map((p, i) => (
-                <tr key={`${p.ts}-${i}`} className="border-t border-zinc-100 dark:border-zinc-900">
-                  <td className="py-2 pr-4 text-zinc-700 dark:text-zinc-300">
-                    {relativeTime(p.ts)}
-                  </td>
-                  <td className="py-2 pr-4">
-                    <StatusPill status={p.status} />
-                  </td>
-                  <td className="py-2 text-zinc-700 dark:text-zinc-300">{pingLatency(p)}</td>
-                </tr>
-              ))}
+              {[...pings]
+                .reverse()
+                .slice(0, 50)
+                .map((p, i) => (
+                  <tr
+                    key={`${p.ts}-${i}`}
+                    className="border-t border-zinc-100 dark:border-zinc-900"
+                  >
+                    <td className="py-2 pr-4 text-zinc-700 dark:text-zinc-300">
+                      {relativeTime(p.ts)}
+                    </td>
+                    <td className="py-2 pr-4">
+                      <StatusPill status={p.status} />
+                    </td>
+                    <td className="py-2 text-zinc-700 dark:text-zinc-300">{pingLatency(p)}</td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         )}
       </section>
 
       <section className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-        <CommitsPanel slug={project.slug} repo={`pritika292/${project.slug}`} />
+        <CommitsPanel slug={project.slug} repo={project.repo} />
         <DeploysPanel slug={project.slug} />
       </section>
     </main>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }): JSX.Element {
+  return (
+    <div className="px-4 py-3">
+      <dt className="te-label">{label}</dt>
+      <dd className="mt-1 font-mono text-2xl text-zinc-900 dark:text-white">{value}</dd>
+    </div>
   );
 }
 
