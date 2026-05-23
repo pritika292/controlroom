@@ -25,3 +25,19 @@ if (typeof window !== "undefined" && !window.matchMedia) {
     })),
   });
 }
+
+// jsdom doesn't ship EventSource. useSSE constructs one on mount; any test
+// that renders a component using it crashes without this shim. Tests that
+// want to drive the SSE flow (tests/client/useSSE.test.tsx) replace this
+// with their own implementation via vi.stubGlobal.
+if (typeof globalThis !== "undefined" && typeof globalThis.EventSource === "undefined") {
+  class NoopEventSource {
+    onopen: (() => void) | null = null;
+    onerror: (() => void) | null = null;
+    addEventListener(): void {}
+    removeEventListener(): void {}
+    close(): void {}
+  }
+  // @ts-expect-error: minimal shim, not the full DOM EventSource interface
+  globalThis.EventSource = NoopEventSource;
+}
