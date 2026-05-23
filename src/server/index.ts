@@ -2,6 +2,7 @@ import "dotenv/config";
 import { config } from "./config.js";
 import { createApp } from "./app.js";
 import { startHealthPoller, stopHealthPoller } from "./services/healthPoller.js";
+import { closeRedis } from "./services/redis.js";
 
 const PORT = config.PORT;
 
@@ -16,10 +17,12 @@ const server = app.listen(PORT, () => {
 
 function shutdown(signal: NodeJS.Signals): void {
   console.log(`Received ${signal}; shutting down`);
-  void stopHealthPoller().then(() => {
-    server.close(() => process.exit(0));
-    setTimeout(() => process.exit(1), 5_000).unref();
-  });
+  void stopHealthPoller()
+    .then(() => closeRedis())
+    .then(() => {
+      server.close(() => process.exit(0));
+      setTimeout(() => process.exit(1), 5_000).unref();
+    });
 }
 
 process.on("SIGINT", shutdown);
