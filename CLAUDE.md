@@ -91,8 +91,45 @@ sentence keeps the contract loud.
   "Generated with Claude Code" footers. Read shortlive's `git log` for tone. Author identity
   is `Pritika Priyadarshini <pritika98@gmail.com>` — verify with `git config user.email`
   before the first commit.
-- **PR conventions** match shortlive: `Tier N: short description (closes #X)`, Summary +
-  Test plan body, squash-merge with `gh pr merge --squash --delete-branch`.
+- **PR conventions** match shortlive: imperative subject + `(closes #X)`, body that
+  explains the bug or intent before the change, ends with a `## Test plan` checkbox list.
+  Squash-merge with `gh pr merge --auto --squash --delete-branch`.
+
+## PR sizing (non-negotiable)
+
+Ship **one issue per PR** unless two issues are inseparable (e.g. a service plus its
+HTTP route). A reviewer should be able to read the diff in 5 minutes and understand
+every line. Hard cap: **~400 LOC of production code + tests per PR**. If you're going
+over, split.
+
+When in doubt, split: easier to merge two small PRs than to recover one too-big one.
+
+## PR voice (do not sound like AI)
+
+Read shortlive's recent merged PRs for tone calibration:
+`gh pr list -R pritika292/shortlive --state merged --limit 5 --json title,body`.
+
+What real PRs from this project look like:
+
+- Subject lines are direct and specific. `Fix Copy button on plain HTTP; show full URL`
+  not `Implement comprehensive copy improvements`. `Add health poller` not
+  `feat: implement robust polling subsystem with retry logic`.
+- Bodies explain the **bug or motivation first**, then what changed, then tradeoffs you
+  consciously didn't fix. Real numbers when you have them (`607 → 213 lines`, `p99 117 ms`).
+- No marketing adjectives. Avoid: `comprehensive`, `robust`, `elegant`, `seamless`,
+  `powerful`, `leverages`, `utilizes`, `cutting-edge`, `production-ready`.
+- No "this PR" / "I have" / "we now". Imperative voice for both commits and PR bodies.
+- No section headers in tiny PR bodies. A two-sentence paragraph is fine. Reserve
+  `## What changed` / `## Test plan` for PRs that actually need structure.
+- No exhaustive file-by-file walkthroughs in the body — the diff already shows that.
+- No conventional-commit prefixes (`feat:`, `fix:`, `chore:`). Shortlive doesn't use them.
+- **NEVER** include `Co-Authored-By: Claude`, `Generated with Claude Code`, em-dashes
+  in PR/commit text (`—` or `–`), or emoji decoration in commit subjects.
+- Honest about scope. If a knob is deliberately deferred, say "out of scope, follow-up #N"
+  rather than padding the PR with it.
+
+Before you push, **read your own commit messages and PR body out loud**. If it sounds
+like a press release, rewrite it.
 - **CI must be green before merge.** Branch protection on `main` will enforce this once
   you run `scripts/repo-settings.sh`.
 
