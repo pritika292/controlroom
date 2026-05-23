@@ -26,20 +26,32 @@ publicInfraRouter.get("/api/public/infra", async (_req, res) => {
 
   const [vm, health] = await Promise.all([vmMetrics(), infraHealth()]);
 
-  // Containers reported in the panel: the controlroom app + the shared
-  // services + every live project. Planned projects render greyed out.
-  // The 'up' field is derived from health pings already in the registry --
-  // ControlRoom and shared services are 'up' by definition if we got here.
+  // Containers in the panel: the controlroom app, the two shared services,
+  // and every LIVE project. Planned projects collapse into a single
+  // "UPCOMING" tile that carries the count -- ten dashed boxes read as
+  // vaporware bingo, one tile reads as roadmap.
+  const liveProjects = projects.filter((p) => p.status === "live");
+  const plannedCount = projects.length - liveProjects.length;
   const containers = [
     { code: "CTL", name: "controlroom", role: "app", up: true },
     { code: "DB", name: "pritika-postgres", role: "shared", up: health.postgres.up },
     { code: "CACHE", name: "pritika-redis", role: "shared", up: health.redis.up },
-    ...projects.map((p) => ({
+    ...liveProjects.map((p) => ({
       code: p.code,
       name: p.name,
-      role: p.status === "live" ? "project" : "planned",
-      up: p.status === "live", // we trust the project's own health endpoint elsewhere
+      role: "project" as const,
+      up: true,
     })),
+    ...(plannedCount > 0
+      ? [
+          {
+            code: "UPCOMING",
+            name: `${plannedCount} planned`,
+            role: "planned" as const,
+            up: false,
+          },
+        ]
+      : []),
   ];
 
   const body = {

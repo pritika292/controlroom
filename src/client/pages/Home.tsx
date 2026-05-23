@@ -3,6 +3,7 @@ import { IncidentBanner } from "../components/IncidentBanner.js";
 import { InfraPanel } from "../components/InfraPanel.js";
 import { ProjectCard } from "../components/ProjectCard.js";
 import { StatsStrip } from "../components/StatsStrip.js";
+import { UpcomingCard } from "../components/UpcomingCard.js";
 import { useSSE } from "../hooks/useSSE.js";
 import { useStatus } from "../hooks/useStatus.js";
 
@@ -46,9 +47,12 @@ export function Home(): JSX.Element {
 
       {data !== null && (
         <section className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {data.map((project) => (
-            <ProjectCard key={project.slug} project={project} />
-          ))}
+          {data
+            .filter((p) => p.status === "live")
+            .map((project) => (
+              <ProjectCard key={project.slug} project={project} />
+            ))}
+          <UpcomingCard planned={data.filter((p) => p.status === "planned")} />
         </section>
       )}
 

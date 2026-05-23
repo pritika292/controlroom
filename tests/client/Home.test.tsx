@@ -87,12 +87,16 @@ describe("<Home />", () => {
     expect(screen.getByText(/Eleven projects/i)).toBeInTheDocument();
   });
 
-  it("renders a card per project after the status fetch resolves", async () => {
+  it("renders a card per LIVE project plus one UPCOMING card after fetch resolves", async () => {
     renderHome();
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: "shortlive" })).toBeInTheDocument();
     });
-    expect(screen.getByRole("heading", { name: "edgeflag" })).toBeInTheDocument();
+    // edgeflag is planned -- it should NOT have its own card
+    expect(screen.queryByRole("heading", { name: "edgeflag" })).toBeNull();
+    // but should appear inside the UPCOMING card's list
+    expect(screen.getByText("UPCOMING")).toBeInTheDocument();
+    expect(screen.getByText("edgeflag")).toBeInTheDocument();
   });
 
   it("shows an error message when the status fetch fails", async () => {

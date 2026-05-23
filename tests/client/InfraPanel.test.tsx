@@ -19,7 +19,7 @@ const INFRA_BODY = {
     { code: "DB", name: "pritika-postgres", role: "shared", up: true },
     { code: "CACHE", name: "pritika-redis", role: "shared", up: true },
     { code: "CR-01", name: "shortlive", role: "project", up: true },
-    { code: "CR-02", name: "hookrelay", role: "planned", up: false },
+    { code: "UPCOMING", name: "10 planned", role: "planned", up: false },
   ],
   cost: { monthlyUsd: 30, note: "estimate at on-demand prices" },
 };
@@ -42,7 +42,7 @@ describe("<InfraPanel />", () => {
     expect(screen.getByText("$30")).toBeInTheDocument();
     expect(screen.getByText("CTL")).toBeInTheDocument();
     expect(screen.getByText("CR-01")).toBeInTheDocument();
-    expect(screen.getByText("CR-02")).toBeInTheDocument();
+    expect(screen.getByText("UPCOMING")).toBeInTheDocument();
     expect(screen.getByText(/4\/5 UP/)).toBeInTheDocument();
   });
 
