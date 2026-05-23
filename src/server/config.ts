@@ -80,9 +80,7 @@ export function parseConfig(env: NodeJS.ProcessEnv): Config {
     }
 
     if (data.DATABASE_URL.includes("localhost") || data.DATABASE_URL.includes("devpass")) {
-      violations.push(
-        "  - DATABASE_URL: must not contain localhost or devpass in production",
-      );
+      violations.push("  - DATABASE_URL: must not contain localhost or devpass in production");
     }
 
     if (violations.length > 0) {
