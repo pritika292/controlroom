@@ -8,16 +8,13 @@ import { subscriberCount } from "../../src/server/services/sseHub.js";
 function readFirstChunk(server: http.Server, path: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const addr = server.address() as { port: number };
-    const req = http.get(
-      { host: "127.0.0.1", port: addr.port, path },
-      (res) => {
-        res.once("data", (chunk: Buffer) => {
-          resolve(chunk.toString());
-          req.destroy();
-        });
-        res.once("error", reject);
-      },
-    );
+    const req = http.get({ host: "127.0.0.1", port: addr.port, path }, (res) => {
+      res.once("data", (chunk: Buffer) => {
+        resolve(chunk.toString());
+        req.destroy();
+      });
+      res.once("error", reject);
+    });
     req.once("error", (err) => {
       // Destroyed socket emits ECONNRESET — that's expected after we call
       // req.destroy(), so only reject on other errors.
@@ -31,9 +28,7 @@ function listen(server: http.Server): Promise<void> {
 }
 
 function close(server: http.Server): Promise<void> {
-  return new Promise((resolve, reject) =>
-    server.close((err) => (err ? reject(err) : resolve())),
-  );
+  return new Promise((resolve, reject) => server.close((err) => (err ? reject(err) : resolve())));
 }
 
 describe("GET /api/stream", () => {
@@ -41,24 +36,19 @@ describe("GET /api/stream", () => {
     const server = http.createServer(createApp());
     await listen(server);
 
-    const statusAndType = await new Promise<{ status: number; ct: string }>(
-      (resolve, reject) => {
-        const addr = server.address() as { port: number };
-        const req = http.get(
-          { host: "127.0.0.1", port: addr.port, path: "/api/stream" },
-          (res) => {
-            resolve({
-              status: res.statusCode ?? 0,
-              ct: res.headers["content-type"] ?? "",
-            });
-            req.destroy();
-          },
-        );
-        req.once("error", (err) => {
-          if ((err as NodeJS.ErrnoException).code !== "ECONNRESET") reject(err);
+    const statusAndType = await new Promise<{ status: number; ct: string }>((resolve, reject) => {
+      const addr = server.address() as { port: number };
+      const req = http.get({ host: "127.0.0.1", port: addr.port, path: "/api/stream" }, (res) => {
+        resolve({
+          status: res.statusCode ?? 0,
+          ct: res.headers["content-type"] ?? "",
         });
-      },
-    );
+        req.destroy();
+      });
+      req.once("error", (err) => {
+        if ((err as NodeJS.ErrnoException).code !== "ECONNRESET") reject(err);
+      });
+    });
 
     await close(server);
     expect(statusAndType.status).toBe(200);
