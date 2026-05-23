@@ -104,6 +104,19 @@ over, split.
 
 When in doubt, split: easier to merge two small PRs than to recover one too-big one.
 
+## Pre-push checklist (run every time, no exceptions)
+
+CI's lint job runs `prettier --check` as the last step and fails the whole pipeline on
+the smallest formatting drift. The fix is one command; do it locally before pushing:
+
+```sh
+npm run lint && npm run format:check && npm run build && npm test
+```
+
+If `format:check` reports anything, run `npm run format` (which writes the fix) and
+commit the formatting in the same branch. Don't push hoping CI catches it for you —
+that wastes a full ~90s CI cycle.
+
 ## PR voice (do not sound like AI)
 
 Read shortlive's recent merged PRs for tone calibration:
