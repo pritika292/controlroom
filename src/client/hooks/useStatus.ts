@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface ProjectStatus {
   slug: string;
@@ -13,50 +13,56 @@ export interface StatusState {
   data: ProjectStatus[] | null;
   error: string | null;
   loading: boolean;
+  refresh: () => void;
 }
 
 // Polls /api/public/status every `intervalMs`. The server-side Redis cache
-// is 5s, so refreshing more often than that just hits the cache. Default
-// here matches that cache TTL.
+// is 5s, so refreshing more often than that just hits the cache. `refresh`
+// lets the SSE hook trigger an off-cycle fetch when a status flips.
 
 export function useStatus(intervalMs: number = 5_000): StatusState {
   const [data, setData] = useState<ProjectStatus[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  useEffect(() => {
-    let cancelled = false;
+  // Tracks whether the component is still mounted across async closures.
+  const cancelledRef = useRef<boolean>(false);
 
-    async function fetchOnce(): Promise<void> {
-      try {
-        const res = await fetch("/api/public/status");
-        if (!res.ok) {
-          throw new Error(`/api/public/status returned ${res.status}`);
-        }
-        const body = (await res.json()) as ProjectStatus[];
-        if (!cancelled) {
-          setData(body);
-          setError(null);
-          setLoading(false);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : String(err));
-          setLoading(false);
-        }
+  const fetchOnce = useCallback(async (): Promise<void> => {
+    try {
+      const res = await fetch("/api/public/status");
+      if (!res.ok) {
+        throw new Error(`/api/public/status returned ${res.status}`);
+      }
+      const body = (await res.json()) as ProjectStatus[];
+      if (!cancelledRef.current) {
+        setData(body);
+        setError(null);
+        setLoading(false);
+      }
+    } catch (err) {
+      if (!cancelledRef.current) {
+        setError(err instanceof Error ? err.message : String(err));
+        setLoading(false);
       }
     }
+  }, []);
 
+  useEffect(() => {
+    cancelledRef.current = false;
     void fetchOnce();
     const handle = setInterval(() => {
       void fetchOnce();
     }, intervalMs);
-
     return () => {
-      cancelled = true;
+      cancelledRef.current = true;
       clearInterval(handle);
     };
-  }, [intervalMs]);
+  }, [fetchOnce, intervalMs]);
 
-  return { data, error, loading };
+  const refresh = useCallback(() => {
+    void fetchOnce();
+  }, [fetchOnce]);
+
+  return { data, error, loading, refresh };
 }

@@ -1,6 +1,14 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi, afterEach } from "vitest";
 import pg from "pg";
-import { pollOnce } from "../../src/server/services/healthPoller.js";
+import { pollOnce, resetStatusCache } from "../../src/server/services/healthPoller.js";
+import { publish } from "../../src/server/services/sseHub.js";
+
+vi.mock("../../src/server/services/sseHub.js", async () => {
+  const actual = await vi.importActual<typeof import("../../src/server/services/sseHub.js")>(
+    "../../src/server/services/sseHub.js",
+  );
+  return { ...actual, publish: vi.fn() };
+});
 
 const DATABASE_URL = process.env["DATABASE_URL"];
 const describeIfDb = DATABASE_URL ? describe : describe.skip;
@@ -23,7 +31,8 @@ describeIfDb("healthPoller", () => {
 
   beforeEach(async () => {
     await client.query("TRUNCATE health_pings");
-    vi.restoreAllMocks();
+    resetStatusCache();
+    vi.mocked(publish).mockClear();
   });
 
   afterEach(() => {
@@ -142,5 +151,51 @@ describeIfDb("healthPoller", () => {
     // The remaining row is recent (within the last minute).
     const ageMs = Date.now() - new Date(rows[0]!.ts).getTime();
     expect(ageMs).toBeLessThan(60_000);
+  });
+
+  it("publishes status_change on the first poll for a project", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true }) }),
+    );
+
+    await pollOnce();
+
+    expect(publish).toHaveBeenCalledTimes(1);
+    expect(publish).toHaveBeenCalledWith(
+      "status_change",
+      expect.objectContaining({ slug: "shortlive", previous: null, status: "up" }),
+    );
+  });
+
+  it("does not publish when status stays the same across polls", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true }) }),
+    );
+
+    await pollOnce();
+    vi.mocked(publish).mockClear();
+    await pollOnce();
+
+    expect(publish).not.toHaveBeenCalled();
+  });
+
+  it("publishes status_change when status flips", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true }) }),
+    );
+    await pollOnce();
+    vi.mocked(publish).mockClear();
+
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500 }));
+    await pollOnce();
+
+    expect(publish).toHaveBeenCalledTimes(1);
+    expect(publish).toHaveBeenCalledWith(
+      "status_change",
+      expect.objectContaining({ slug: "shortlive", previous: "up", status: "down" }),
+    );
   });
 });

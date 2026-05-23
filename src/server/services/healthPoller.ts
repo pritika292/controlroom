@@ -1,10 +1,21 @@
 import { getPool } from "../db/pool.js";
 import { getLiveProjects } from "../projects.js";
+import { publish } from "./sseHub.js";
 
 const DEFAULT_INTERVAL_MS = 30_000;
 
+type PingStatus = "up" | "down" | "timeout" | "error";
+
 // Module-level scheduler state.
 let handle: ReturnType<typeof setTimeout> | null = null;
+
+// Last seen status per project. We only publish status_change on transitions
+// so the SSE feed isn't a firehose of repeated "still up" events.
+const lastStatusBySlug = new Map<string, PingStatus>();
+
+export function resetStatusCache(): void {
+  lastStatusBySlug.clear();
+}
 
 export async function pollOnce(): Promise<void> {
   const pool = getPool();
@@ -15,7 +26,7 @@ export async function pollOnce(): Promise<void> {
       const url = `${project.liveUrl}/health`;
       const start = Date.now();
 
-      let status: "up" | "down" | "timeout" | "error";
+      let status: PingStatus;
       let latencyMs: number | null = null;
 
       try {
@@ -60,6 +71,20 @@ export async function pollOnce(): Promise<void> {
          VALUES ($1, now(), $2, $3)`,
         [project.slug, status, latencyMs],
       );
+
+      // Only publish when status actually flips. On the very first poll
+      // we have no prior value; treat that as a transition from "unknown"
+      // so the dashboard repaints from grey to whatever the real status is.
+      const prev = lastStatusBySlug.get(project.slug);
+      if (prev !== status) {
+        lastStatusBySlug.set(project.slug, status);
+        publish("status_change", {
+          slug: project.slug,
+          previous: prev ?? null,
+          status,
+          ts: Date.now(),
+        });
+      }
     }),
   );
 
@@ -92,4 +117,5 @@ export async function stopHealthPoller(): Promise<void> {
     clearTimeout(handle);
     handle = null;
   }
+  lastStatusBySlug.clear();
 }
