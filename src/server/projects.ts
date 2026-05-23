@@ -2,6 +2,9 @@ export interface Project {
   slug: string;
   name: string;
   code: string; // device-catalog code shown in the UI, "CR-01" etc
+  tagline: string; // one-liner shown on cards and at the top of the detail page
+  description: string; // a couple of sentences for the detail page only
+  tech: string[]; // small tech-stack chips
   status: "live" | "planned";
   port: number;
   repo: string; // "pritika292/<slug>"
@@ -20,6 +23,10 @@ const _projects: Project[] = [
     slug: "shortlive",
     name: "shortlive",
     code: code(1),
+    tagline: "URL shortener with sub-second live click analytics.",
+    description:
+      "Click on a short link, watch the dashboard update before the next blink. Real production-shaped: async fail-soft hot path, Redis pub/sub fan-out, rule-based webhook automation with HMAC + exponential backoff + DLQ.",
+    tech: ["TypeScript", "Express 5", "React 18", "Postgres 16", "Redis 7", "WebSocket"],
     status: "live",
     port: 3010,
     repo: "pritika292/shortlive",
@@ -29,6 +36,10 @@ const _projects: Project[] = [
     slug: "hookrelay",
     name: "hookrelay",
     code: code(2),
+    tagline: "Webhook delivery & replay playground.",
+    description:
+      "Receive, inspect, replay, and replay-with-edit any webhook. HMAC-verified, exponential backoff, dead-letter queue, signed delivery to user-supplied targets.",
+    tech: ["TypeScript", "Express", "Postgres", "Redis", "BullMQ"],
     status: "planned",
     port: 3001,
     repo: "pritika292/hookrelay",
@@ -39,6 +50,10 @@ const _projects: Project[] = [
     slug: "flowforge",
     name: "flowforge",
     code: code(3),
+    tagline: "Durable visual workflow engine.",
+    description:
+      "Drag-and-drop step builder with crash-resistant execution. Long-running workflows survive container restarts via a Postgres-backed state machine.",
+    tech: ["TypeScript", "React Flow", "Postgres", "Temporal-ish core"],
     status: "planned",
     port: 3002,
     repo: "pritika292/flowforge",
@@ -49,6 +64,10 @@ const _projects: Project[] = [
     slug: "edgeflag",
     name: "edgeflag",
     code: code(4),
+    tagline: "Feature flag control room.",
+    description:
+      "Boolean and percentage rollouts, environment-scoped overrides, audit log, SSE-pushed updates to clients. Read path designed for <5 ms p99 in-process.",
+    tech: ["TypeScript", "Express", "Postgres", "Redis", "SSE"],
     status: "planned",
     port: 3003,
     repo: "pritika292/edgeflag",
@@ -59,6 +78,10 @@ const _projects: Project[] = [
     slug: "canvasync",
     name: "canvasync",
     code: code(5),
+    tagline: "Real-time collaborative whiteboard.",
+    description:
+      "Multi-user canvas with CRDT-based merge. Operations are conflict-free; reconnect after a network drop catches up automatically.",
+    tech: ["TypeScript", "React", "Yjs", "WebSocket", "Postgres"],
     status: "planned",
     port: 3004,
     repo: "pritika292/canvasync",
@@ -69,6 +92,10 @@ const _projects: Project[] = [
     slug: "pulseboard",
     name: "pulseboard",
     code: code(6),
+    tagline: "Live multi-tenant analytics.",
+    description:
+      "Per-tenant dashboards over a shared Postgres + Redis store; row-level isolation, snapshot batching, debounced filter chips.",
+    tech: ["TypeScript", "React", "Postgres", "Redis", "Recharts"],
     status: "planned",
     port: 3005,
     repo: "pritika292/pulseboard",
@@ -79,6 +106,10 @@ const _projects: Project[] = [
     slug: "prbot",
     name: "prbot",
     code: code(7),
+    tagline: "Agentic PR reviewer playground.",
+    description:
+      "Open a PR, get an LLM-generated review with line-level comments. Bounded prompt context, cost ceiling per repo, escape hatch to disable.",
+    tech: ["TypeScript", "GitHub App", "OpenAI", "Express"],
     status: "planned",
     port: 3006,
     repo: "pritika292/prbot",
@@ -89,6 +120,10 @@ const _projects: Project[] = [
     slug: "mcphub",
     name: "mcphub",
     code: code(8),
+    tagline: "MCP server sandbox runner.",
+    description:
+      "Drop in a Model Context Protocol server, get a hosted sandbox URL. Process isolation, resource limits, ephemeral by default.",
+    tech: ["TypeScript", "Docker", "MCP SDK"],
     status: "planned",
     port: 3007,
     repo: "pritika292/mcphub",
@@ -99,6 +134,10 @@ const _projects: Project[] = [
     slug: "recall",
     name: "recall",
     code: code(9),
+    tagline: "Streaming RAG with citations.",
+    description:
+      "Ingest a doc, ask a question, get an answer with inline source spans. pgvector for retrieval, server-sent streaming for response.",
+    tech: ["TypeScript", "pgvector", "OpenAI", "SSE"],
     status: "planned",
     port: 3008,
     repo: "pritika292/recall",
@@ -109,6 +148,10 @@ const _projects: Project[] = [
     slug: "liveauction",
     name: "liveauction",
     code: code(10),
+    tagline: "Real-time concurrent bidding.",
+    description:
+      "Hundreds of clients, one item, no double-spends. Optimistic locking on the bid path, WebSocket fan-out for state, server-authoritative price.",
+    tech: ["TypeScript", "Express", "Postgres", "WebSocket", "Redis"],
     status: "planned",
     port: 3009,
     repo: "pritika292/liveauction",
@@ -119,6 +162,10 @@ const _projects: Project[] = [
     slug: "pitchpage",
     name: "pitchpage",
     code: code(11),
+    tagline: "Personalized founder demo portal.",
+    description:
+      "One URL per founder. Their company logo, their pain points, the projects most relevant to them, tracked open + click signals.",
+    tech: ["TypeScript", "Next.js", "Postgres"],
     status: "planned",
     port: 3011,
     repo: "pritika292/pitchpage",

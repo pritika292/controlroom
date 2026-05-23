@@ -4,7 +4,12 @@ export interface ProjectStatus {
   slug: string;
   name: string;
   code: string; // device-catalog code, e.g. "CR-01"
+  tagline: string;
+  description: string;
+  tech: string[];
   status: "live" | "planned";
+  repo: string;
+  liveUrl: string | null;
   eta: string | null;
   lastStatus: "up" | "down" | "timeout" | "error" | null;
   lastPingAt: string | null;
