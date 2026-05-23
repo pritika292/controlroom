@@ -10,6 +10,8 @@ export default defineWorkspace([
         "tests/integration/**/*.test.ts",
         "tests/db/**/*.test.ts",
         "tests/middleware/**/*.test.ts",
+        "tests/services/**/*.test.ts",
+        "tests/routes/**/*.test.ts",
         "tests/*.test.ts",
       ],
       environment: "node",
