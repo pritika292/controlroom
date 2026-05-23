@@ -11,6 +11,32 @@ admin UI, no auth, no destructive endpoints. The toolchain mirrors the `shortliv
 reference project (path in PLAN.md). The plan has 25 GitHub issues across 6 tiers and
 ~7 days of work.
 
+## Model routing
+
+The main session runs on **Opus** and is responsible for planning, architecture
+decisions, task decomposition, code review, and answering ambiguous questions.
+Implementation and coding tasks are **delegated to Sonnet subagents** via the Agent
+tool with `model: "sonnet"`.
+
+- **Opus (main thread)**: read PLAN.md, design approaches, decompose tiers into
+  scoped tasks, review subagent output, write commit messages and PR descriptions,
+  resolve `[sonnet]`/`[opus]` review comments, decide when to escalate to the user.
+- **Sonnet (subagents)**: write code, run tests, apply edits to scoped files,
+  follow a clear spec produced by Opus. A Sonnet subagent should **not** make
+  architectural decisions on its own — if a spec is ambiguous or scope is unclear,
+  it must stop and report back to Opus rather than invent a design.
+- **How to dispatch**: use the Agent tool with `subagent_type: "general-purpose"`
+  (or a more specific agent) and `model: "sonnet"`. Brief the subagent like a
+  colleague with no context: include file paths, line numbers, the exact spec,
+  acceptance criteria, and what NOT to do. Ask for a short report back.
+- **What stays in Opus even if it touches code**: one-line fixes during review,
+  resolving merge conflicts, anything that requires reading the full conversation
+  history to decide correctly.
+- **Mechanics note**: the main session model is set by the user via `/model`. Opus
+  does not switch the main session itself — it only delegates by spawning Sonnet
+  subagents. If the user sets the main session to Sonnet, the routing collapses
+  and Sonnet handles everything in-thread.
+
 ## First moves
 
 1. Read `PLAN.md` here.
