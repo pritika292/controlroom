@@ -17,9 +17,16 @@ interface RawCommit {
 let handle: ReturnType<typeof setTimeout> | null = null;
 
 export async function syncOnce(): Promise<void> {
-  if (config.GITHUB_PAT === "") {
-    console.log("[githubSync] GITHUB_PAT not set; skipping");
-    return;
+  // Anonymous calls work for public repos at 60/hr/IP. PAT bumps that to
+  // 5000/hr. We have 11 projects polled hourly = 11/hr requests, which fits
+  // either bucket. Logging the mode helps future-Pritika understand why a
+  // 403 might show up if she ever flips a repo private without a PAT.
+  const hasPat = config.GITHUB_PAT !== "";
+  const authHeaders: Record<string, string> = hasPat
+    ? { Authorization: `Bearer ${config.GITHUB_PAT}` }
+    : {};
+  if (!hasPat) {
+    console.log("[githubSync] GITHUB_PAT not set; using anonymous GitHub API (60/hr/IP)");
   }
 
   const pool = getPool();
@@ -30,7 +37,7 @@ export async function syncOnce(): Promise<void> {
         `https://api.github.com/repos/${project.repo}/commits?per_page=${COMMITS_PER_PROJECT}`,
         {
           headers: {
-            Authorization: `Bearer ${config.GITHUB_PAT}`,
+            ...authHeaders,
             Accept: "application/vnd.github+json",
             "X-GitHub-Api-Version": "2022-11-28",
             "User-Agent": "controlroom-sync",
