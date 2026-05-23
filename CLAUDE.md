@@ -52,6 +52,34 @@ tool with `model: "sonnet"`.
    any code lands.
 6. Start with Tier 0 (bootstrap) — don't skip phases.
 
+## Testing standard (non-negotiable)
+
+Every code change ships with tests in the same PR. No "follow-up PR" excuses.
+
+- **Unit tests** for pure functions, components, hooks, and individual modules.
+  Use Vitest. Server unit tests in the `node` environment; client unit tests in
+  `jsdom`. Mirror shortlive's `build/vitest.config.ts` workspace split.
+- **Integration tests** for any code that touches Postgres, Redis, an HTTP route
+  handler, the SSE hub, the migration runner, or a worker. Tests run against
+  **real Postgres + Redis** — the CI service containers in `ci.yml` and the
+  `docker-compose.local.yml` services locally. **No mocks for the DB or Redis.**
+- **E2E tests** with Playwright for the SPA happy paths: `/` (status board
+  renders with at least shortlive's dot), `/p/:slug` (per-project page loads),
+  theme toggle persists across reload, SSE reconnect after a brief network
+  drop. Add Playwright only when there's a route worth testing — Tier 3 issue
+  #15 is the earliest point that becomes meaningful.
+- **Coverage** is reported by Vitest but **not gated** by a hard threshold in
+  CI. Reviewer judgement: did the new code get appropriate tests?
+- **CI must run tests on every push and every PR**, on Postgres + Redis service
+  containers. The `test` job in `ci.yml` is the gate.
+- **Branch protection** turns on at the end of Tier 1 (issue #10's
+  `scripts/repo-settings.sh`). After that, CI must be green before merge — no
+  exceptions, including for subagents.
+
+When dispatching a Sonnet subagent, the brief MUST include: "Tests live in the
+same PR; if you finish the code without tests, the PR will be rejected." That
+sentence keeps the contract loud.
+
 ## Constraints (read these before writing code)
 
 - **No secrets in this repo or in GitHub Actions secrets.** Everything goes through Azure
