@@ -57,6 +57,25 @@ if [ -z "$GITHUB_WEBHOOK_SECRET" ]; then
   log "Generated new GITHUB_WEBHOOK_SECRET"
 fi
 
+# Pull the VM's own resource id and subscription id from the Azure Instance
+# Metadata Service. The container uses these to call Azure Monitor via the
+# VM's Managed Identity. If IMDS isn't reachable (running outside Azure),
+# both stay empty and vmMetrics() reports "metrics unavailable" instead of
+# crashing.
+IMDS_JSON="$(curl -sS --max-time 3 -H 'Metadata: true' \
+  'http://169.254.169.254/metadata/instance?api-version=2021-12-13' 2>/dev/null || true)"
+AZURE_VM_RESOURCE_ID=""
+AZURE_SUBSCRIPTION_ID=""
+if [ -n "$IMDS_JSON" ] && command -v jq >/dev/null 2>&1; then
+  AZURE_VM_RESOURCE_ID="$(printf '%s' "$IMDS_JSON" | jq -r '.compute.resourceId // empty')"
+  AZURE_SUBSCRIPTION_ID="$(printf '%s' "$IMDS_JSON" | jq -r '.compute.subscriptionId // empty')"
+fi
+if [ -n "$AZURE_VM_RESOURCE_ID" ]; then
+  log "VM resource id resolved via IMDS"
+else
+  log "IMDS unreachable or jq missing; VM metrics will be unavailable"
+fi
+
 umask 077
 cat > "$PROJECT_ENV" <<EOF
 NODE_ENV=production
@@ -65,6 +84,8 @@ DATABASE_URL=postgres://postgres:${POSTGRES_PASSWORD}@pritika-postgres:5432/cont
 REDIS_URL=redis://:${REDIS_PASSWORD}@pritika-redis:6379/12
 GITHUB_PAT=${GITHUB_PAT}
 GITHUB_WEBHOOK_SECRET=${GITHUB_WEBHOOK_SECRET}
+AZURE_VM_RESOURCE_ID=${AZURE_VM_RESOURCE_ID}
+AZURE_SUBSCRIPTION_ID=${AZURE_SUBSCRIPTION_ID}
 LOG_LEVEL=info
 EOF
 log "Wrote $PROJECT_ENV (mode 600)"
