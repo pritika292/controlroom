@@ -52,6 +52,26 @@ describe("<Home />", () => {
         if (url === "/api/public/status") {
           return { ok: true, json: async () => STATUS_BODY };
         }
+        if (url === "/api/public/infra") {
+          return {
+            ok: true,
+            json: async () => ({
+              vm: {
+                available: false,
+                cpuPercent: null,
+                memUsedPercent: null,
+                region: null,
+                sampledAt: null,
+                reason: "unavailable in test",
+                uptimeSeconds: 1,
+              },
+              postgres: { up: true, latencyMs: 1 },
+              redis: { up: true, latencyMs: 1 },
+              containers: [],
+              cost: { monthlyUsd: 30, note: "test" },
+            }),
+          };
+        }
         return { ok: true, json: async () => [] };
       }),
     );

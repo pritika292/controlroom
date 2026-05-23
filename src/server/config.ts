@@ -18,6 +18,11 @@ const ConfigSchema = z.object({
   // non-empty.
   GITHUB_PAT: z.string().default(""),
   GITHUB_WEBHOOK_SECRET: z.string().default(""),
+  // Optional Azure resource id for the VM the controlroom container runs on.
+  // When set, vmMetrics queries Azure Monitor for CPU/mem via Managed Identity.
+  // Shape: /subscriptions/<sub>/resourceGroups/<rg>/providers/Microsoft.Compute/virtualMachines/<name>
+  AZURE_VM_RESOURCE_ID: z.string().default(""),
+  AZURE_SUBSCRIPTION_ID: z.string().default(""),
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
 });
 

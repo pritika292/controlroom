@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { IncidentBanner } from "../components/IncidentBanner.js";
+import { InfraPanel } from "../components/InfraPanel.js";
 import { ProjectCard } from "../components/ProjectCard.js";
 import { StatsStrip } from "../components/StatsStrip.js";
 import { useSSE } from "../hooks/useSSE.js";
@@ -50,6 +51,8 @@ export function Home(): JSX.Element {
           ))}
         </section>
       )}
+
+      <InfraPanel />
     </main>
   );
 }

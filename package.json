@@ -30,6 +30,8 @@
     "tabWidth": 2
   },
   "dependencies": {
+    "@azure/arm-monitor": "^7.0.0",
+    "@azure/identity": "^4.13.1",
     "dotenv": "^17.4.2",
     "express": "^5.0.1",
     "gray-matter": "^4.0.3",

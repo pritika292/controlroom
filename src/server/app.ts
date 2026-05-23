@@ -10,6 +10,7 @@ import { projectPingsRouter } from "./routes/projectPings.js";
 import { projectCommitsRouter } from "./routes/projectCommits.js";
 import { projectDeploysRouter } from "./routes/projectDeploys.js";
 import { publicStatsRouter } from "./routes/publicStats.js";
+import { publicInfraRouter } from "./routes/publicInfra.js";
 import { publicIncidentsRouter } from "./routes/publicIncidents.js";
 import { webhooksGithubRouter } from "./routes/webhooksGithub.js";
 
@@ -45,6 +46,7 @@ export function createApp(): Express {
   app.use(projectCommitsRouter);
   app.use(projectDeploysRouter);
   app.use(publicStatsRouter);
+  app.use(publicInfraRouter);
   app.use(publicIncidentsRouter);
 
   // Serve the built SPA when it exists (production / post-build).
