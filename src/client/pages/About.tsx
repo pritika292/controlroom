@@ -4,11 +4,11 @@ export function About(): JSX.Element {
       <p className="te-label">ABOUT / CONTROLROOM</p>
       <h1 className="mt-2 font-mono text-3xl text-zinc-900 dark:text-white">What this is.</h1>
 
-      <p className="mt-6 text-base leading-relaxed text-zinc-700 dark:text-zinc-300">
+      <p className="mt-6 text-lg leading-relaxed text-zinc-700 dark:text-zinc-300">
         A public, read-only status board for every project in Pritika's portfolio. Health pings,
         deploy timelines, recent commits. No login. No admin surface. No secrets in the browser.
       </p>
-      <p className="mt-4 text-base leading-relaxed text-zinc-700 dark:text-zinc-300">
+      <p className="mt-4 text-lg leading-relaxed text-zinc-700 dark:text-zinc-300">
         Eleven projects share one Azure VM. ControlRoom polls each one's <code>/health</code> every
         30 seconds, syncs commits from GitHub hourly, and accepts HMAC-verified deploy webhooks. The
         frontend opens a Server-Sent Events stream and repaints the dot the moment a status flips.

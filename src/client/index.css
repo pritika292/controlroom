@@ -25,9 +25,37 @@
     @apply border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950;
   }
   .te-label {
-    @apply uppercase tracking-[0.18em] text-[10px] font-medium text-zinc-500 dark:text-zinc-400;
+    @apply uppercase tracking-[0.18em] text-xs font-medium text-zinc-500 dark:text-zinc-400;
   }
   .te-code {
-    @apply font-mono text-xs text-zinc-500 dark:text-zinc-400;
+    @apply font-mono text-sm text-zinc-500 dark:text-zinc-400;
+  }
+}
+
+/* Breathing border for live project cards on the home grid. Signals "this
+   tile is clickable" without sitting permanently bright (which would read
+   as an alert). Stops on hover; honors reduced motion. */
+.te-breathe {
+  animation: te-breathe 3.2s ease-in-out infinite;
+}
+.te-breathe:hover {
+  animation: none;
+  border-color: #ff6a13;
+}
+@keyframes te-breathe {
+  0%,
+  100% {
+    border-color: rgba(255, 106, 19, 0.25);
+    box-shadow: 0 0 0 0 rgba(255, 106, 19, 0);
+  }
+  50% {
+    border-color: rgba(255, 106, 19, 0.7);
+    box-shadow: 0 0 0 1px rgba(255, 106, 19, 0.25);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .te-breathe {
+    animation: none;
+    border-color: rgba(255, 106, 19, 0.4);
   }
 }

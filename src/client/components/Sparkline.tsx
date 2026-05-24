@@ -22,10 +22,14 @@ export function Sparkline({ pings, width = 120, height = 24 }: Props): JSX.Eleme
       ? "Uptime sparkline: no data"
       : `Uptime sparkline: ${healthyCount} of ${pings.length} pings healthy`;
 
+  // Responsive: viewBox carries the coordinate system, w-full + h-auto
+  // stretch the SVG to fill its parent. Without this the fixed pixel
+  // width overflowed cards on mobile (#72).
   return (
     <svg
-      width={width}
-      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="none"
+      className="block w-full h-auto"
       role="img"
       aria-label={label}
       xmlns="http://www.w3.org/2000/svg"

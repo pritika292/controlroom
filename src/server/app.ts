@@ -13,6 +13,7 @@ import { publicStatsRouter } from "./routes/publicStats.js";
 import { publicInfraRouter } from "./routes/publicInfra.js";
 import { publicIncidentsRouter } from "./routes/publicIncidents.js";
 import { publicDeployFrequencyRouter } from "./routes/publicDeployFrequency.js";
+import { publicIssuesRouter } from "./routes/publicIssues.js";
 import { webhooksGithubRouter } from "./routes/webhooksGithub.js";
 
 const CLIENT_DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../client");
@@ -50,6 +51,7 @@ export function createApp(): Express {
   app.use(publicInfraRouter);
   app.use(publicIncidentsRouter);
   app.use(publicDeployFrequencyRouter);
+  app.use(publicIssuesRouter);
 
   // Serve the built SPA when it exists (production / post-build).
   const indexHtml = path.join(CLIENT_DIST, "index.html");

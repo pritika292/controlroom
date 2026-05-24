@@ -18,8 +18,9 @@ export function LatencyChart({ pings, width = 720, height = 120 }: Props): JSX.E
   if (points.length < 2) {
     return (
       <svg
-        width={width}
-        height={height}
+        viewBox={`0 0 ${width} ${height}`}
+        preserveAspectRatio="xMidYMid meet"
+        className="block w-full h-auto"
         role="img"
         aria-label="Latency chart: not enough data"
         xmlns="http://www.w3.org/2000/svg"
@@ -57,8 +58,9 @@ export function LatencyChart({ pings, width = 720, height = 120 }: Props): JSX.E
 
   return (
     <svg
-      width={width}
-      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="xMidYMid meet"
+      className="block w-full h-auto"
       role="img"
       aria-label={`Latency chart over ${points.length} pings: min ${Math.round(latMin)}ms max ${Math.round(latMax)}ms`}
       xmlns="http://www.w3.org/2000/svg"

@@ -18,7 +18,7 @@ function Stat({ label, value }: { label: string; value: string | number }): JSX.
   return (
     <div className="px-4 py-3">
       <dt className="te-label">{label}</dt>
-      <dd className="mt-1 font-mono text-2xl text-zinc-900 dark:text-white">{value}</dd>
+      <dd className="mt-1 font-mono text-3xl text-zinc-900 dark:text-white">{value}</dd>
     </div>
   );
 }
