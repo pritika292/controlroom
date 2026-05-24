@@ -68,4 +68,32 @@ describe("<Sparkline />", () => {
     const svg = container.querySelector("svg");
     expect(svg?.getAttribute("aria-label")).toBe("Uptime sparkline: no data");
   });
+
+  it("tiles bars to fill width regardless of sample count (#79)", () => {
+    // 4 samples in a 120-wide viewBox should produce 30-wide bars (no gaps).
+    const pings: Ping[] = [
+      makePing("up", 0),
+      makePing("up", 1),
+      makePing("up", 2),
+      makePing("up", 3),
+    ];
+    const { container } = render(<Sparkline pings={pings} />);
+    const bars = Array.from(container.querySelectorAll("rect")).filter(
+      (r) => r.getAttribute("y") === "0",
+    );
+    expect(bars).toHaveLength(4);
+    for (const bar of bars) {
+      expect(Number(bar.getAttribute("width"))).toBe(30);
+    }
+  });
+
+  it("clamps tile width to at least 1px even for very dense samples", () => {
+    // 240 samples in 120-wide viewBox would give 0.5px bars; clamp at 1.
+    const pings: Ping[] = Array.from({ length: 240 }, (_, i) => makePing("up", i));
+    const { container } = render(<Sparkline pings={pings} />);
+    const bars = Array.from(container.querySelectorAll("rect")).filter(
+      (r) => r.getAttribute("y") === "0",
+    );
+    expect(Number(bars[0]!.getAttribute("width"))).toBeGreaterThanOrEqual(1);
+  });
 });
