@@ -41,17 +41,16 @@ describeIfDb("GET /api/public/infra", () => {
     expect(body.postgres.up).toBe(true);
     expect(body.redis.up).toBe(true);
 
-    // Container list: controlroom + 2 shared services + 1 live project (shortlive)
-    // + 1 collapsed "UPCOMING" tile = 5
-    expect(body.containers.length).toBe(3 + 1 + 1);
+    // Container list: controlroom + 2 shared services + 2 live projects
+    // (shortlive + pg-inspector) + 1 collapsed "UPCOMING" tile = 6
+    expect(body.containers.length).toBe(3 + 2 + 1);
     expect(body.containers.find((c) => c.code === "CTL")?.role).toBe("app");
     expect(body.containers.find((c) => c.code === "DB")?.role).toBe("shared");
     expect(body.containers.find((c) => c.code === "CR-01")?.role).toBe("project");
+    expect(body.containers.find((c) => c.code === "CR-12")?.role).toBe("project");
     const upcoming = body.containers.find((c) => c.code === "UPCOMING");
     expect(upcoming?.role).toBe("planned");
     expect(upcoming?.up).toBe(false);
-    // CR-02 etc are no longer surfaced individually
-    expect(body.containers.find((c) => c.code === "CR-02")).toBeUndefined();
 
     expect(body.cost.monthlyUsd).toBeGreaterThan(0);
 

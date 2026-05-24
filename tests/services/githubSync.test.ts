@@ -50,13 +50,15 @@ describeIfDb("githubSync", () => {
       sha: string;
       message: string;
       author: string;
-    }>("SELECT project, sha, message, author FROM commits_cache ORDER BY sha");
-    expect(rows).toHaveLength(2);
-    expect(rows[0]!.project).toBe("shortlive");
-    expect(rows[0]!.sha).toBe("a".repeat(40));
-    expect(rows[0]!.author).toBe("pritika292");
+    }>("SELECT project, sha, message, author FROM commits_cache ORDER BY project, sha");
+    // 2 live projects × 2 commits each = 4 rows
+    expect(rows).toHaveLength(4);
+    const shortliveRows = rows.filter((r) => r.project === "shortlive");
+    expect(shortliveRows).toHaveLength(2);
+    expect(shortliveRows[0]!.sha).toBe("a".repeat(40));
+    expect(shortliveRows[0]!.author).toBe("pritika292");
     // Subject only; body trimmed.
-    expect(rows[1]!.message).toBe("second");
+    expect(shortliveRows[1]!.message).toBe("second");
 
     // GITHUB_PAT is set in tests/setup.server.ts, so the Authorization
     // header should be present. Asserting this protects the inverse case
@@ -80,8 +82,9 @@ describeIfDb("githubSync", () => {
     await syncOnce();
     await syncOnce();
 
-    const { rows } = await client.query("SELECT count(*) AS n FROM commits_cache");
-    expect(Number(rows[0]!.n)).toBe(1);
+    const { rows } = await client.query<{ n: string }>("SELECT count(*) AS n FROM commits_cache");
+    // 2 live projects × 1 commit = 2 rows; re-running doesn't dupe.
+    expect(Number(rows[0]!.n)).toBe(2);
   });
 
   it("logs and continues when GitHub returns non-2xx", async () => {
@@ -147,10 +150,12 @@ describeIfDb("githubSync", () => {
       sha: string;
       status: string;
       actor: string;
-    }>("SELECT project, sha, status, actor FROM deploys");
-    expect(rows).toHaveLength(1);
-    expect(rows[0]!.project).toBe("shortlive");
-    expect(rows[0]!.status).toBe("success");
-    expect(rows[0]!.actor).toBe("pritika292");
+    }>("SELECT project, sha, status, actor FROM deploys ORDER BY project");
+    // 2 live projects × 1 deploy each (the CI run is filtered out) = 2 rows.
+    expect(rows).toHaveLength(2);
+    const shortliveRow = rows.find((r) => r.project === "shortlive");
+    expect(shortliveRow?.status).toBe("success");
+    expect(shortliveRow?.actor).toBe("pritika292");
+    expect(rows.find((r) => r.project === "pg-inspector")).toBeDefined();
   });
 });

@@ -39,6 +39,29 @@ const _projects: Project[] = [
     liveUrl: liveUrlFor("shortlive"),
   },
   {
+    slug: "pg-inspector",
+    name: "pg-inspector",
+    code: code(12),
+    tagline: "Data sandbox: 5 industry schemas, SQL + AI plan reading.",
+    description:
+      "Pick a scenario (social media, enterprise SaaS, infra startup, ecommerce, fintech). Explore its multi-schema layout in an interactive visualizer. Write SQL or generate it from English. See query plans and EXPLAIN-AI commentary. Get schema-improvement suggestions. SQL safety in three defense-in-depth layers; AI via Azure OpenAI + Managed Identity (no API keys anywhere).",
+    tech: [
+      "TypeScript",
+      "Express 5",
+      "React 18",
+      "Postgres 16",
+      "react-flow",
+      "Azure OpenAI",
+      "Managed Identity",
+    ],
+    status: "live",
+    port: 3014,
+    // Custom: subdomain is `pg`, not `pg-inspector`. liveUrlFor would have
+    // produced https://pg-inspector.pritika.studio which isn't routed.
+    liveUrl: "https://pg.pritika.studio",
+    repo: "pritika292/pg-inspector",
+  },
+  {
     slug: "hookrelay",
     name: "hookrelay",
     code: code(2),
