@@ -62,6 +62,33 @@ const _projects: Project[] = [
     repo: "pritika292/pg-inspector",
   },
   {
+    slug: "focusroom",
+    name: "focusroom",
+    code: code(13),
+    tagline: "Drop a post, watch 20 personas react. Audience simulation.",
+    description:
+      "Type a post or pitch, the room of 20 personas (diverse demographics, voices, occupations) reacts in real time with threaded replies. Each persona has its own model card and stance; reactions stream via SSE as the simulation runs.",
+    tech: ["TypeScript", "Express", "React 18", "Postgres 16", "SSE", "Azure OpenAI"],
+    status: "live",
+    port: 3015,
+    repo: "pritika292/focusroom",
+    liveUrl: liveUrlFor("focusroom"),
+  },
+  {
+    slug: "portfolio",
+    name: "portfolio",
+    code: code(14),
+    tagline: "Pritika Priyadarshini — portfolio.",
+    description:
+      "The umbrella site for the whole portfolio. Hero, experience, education, the live shipping pulse pulled from controlroom, and cards for every spare-time build. Caddy serves it at the apex.",
+    tech: ["TypeScript", "Express 5", "React 18", "Tailwind", "Caddy"],
+    status: "live",
+    port: 3013,
+    repo: "pritika292/portfolio",
+    // Apex domain, no subdomain prefix.
+    liveUrl: "https://pritika.studio",
+  },
+  {
     slug: "hookrelay",
     name: "hookrelay",
     code: code(2),
