@@ -49,24 +49,24 @@ export function About(): JSX.Element {
         {/* Left: story */}
         <section className="space-y-6">
           <p className="te-label">STORY</p>
-          <p className="text-base leading-relaxed text-zinc-700 dark:text-zinc-300">
+          <p className="text-base leading-relaxed text-justify text-zinc-700 dark:text-zinc-300">
             A public, read-only status board for every project in Pritika&apos;s portfolio. Health
             pings, deploy timelines, recent commits, AI-budget counters, request latency, visit
             counts. No login. No admin surface. No secrets in the browser.
           </p>
-          <p className="text-base leading-relaxed text-zinc-700 dark:text-zinc-300">
+          <p className="text-base leading-relaxed text-justify text-zinc-700 dark:text-zinc-300">
             Five projects share one Azure VM in northcentralus. ControlRoom polls each one&apos;s{" "}
             <code className="font-mono text-zinc-900 dark:text-white">/health</code> every 30
             seconds, syncs commits from GitHub hourly, and accepts HMAC-verified deploy webhooks.
             The frontend opens a Server-Sent Events stream and repaints the dot the moment a status
             flips.
           </p>
-          <p className="text-base leading-relaxed text-zinc-700 dark:text-zinc-300">
+          <p className="text-base leading-relaxed text-justify text-zinc-700 dark:text-zinc-300">
             Visit counts come from a tiny beacon every project fires once on landing-page mount; the
             server hashes the source IP with a daily-rotating salt and aggregates this-week vs
             last-week per project. Bots are classified and excluded from the public count.
           </p>
-          <p className="text-base leading-relaxed text-zinc-700 dark:text-zinc-300">
+          <p className="text-base leading-relaxed text-justify text-zinc-700 dark:text-zinc-300">
             Deploy is GitHub Actions → OIDC → <code className="font-mono">az vm run-command</code>.
             No long-lived secrets in the repo; the runtime reads its OpenAI key from Azure Key Vault
             via the VM&apos;s Managed Identity at boot.
