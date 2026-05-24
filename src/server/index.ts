@@ -3,6 +3,7 @@ import { config } from "./config.js";
 import { createApp } from "./app.js";
 import { startHealthPoller, stopHealthPoller } from "./services/healthPoller.js";
 import { startGithubSync, stopGithubSync } from "./services/githubSync.js";
+import { startVisitsSweeper, stopVisitsSweeper } from "./services/visitsSweeper.js";
 import { loadIncidents } from "./services/incidentsLoader.js";
 import { closeRedis } from "./services/redis.js";
 
@@ -20,6 +21,7 @@ const server = app.listen(PORT, () => {
   if (config.NODE_ENV !== "test") {
     startHealthPoller();
     startGithubSync();
+    startVisitsSweeper();
   }
 });
 
@@ -27,6 +29,7 @@ function shutdown(signal: NodeJS.Signals): void {
   console.log(`Received ${signal}; shutting down`);
   void stopHealthPoller()
     .then(() => stopGithubSync())
+    .then(() => stopVisitsSweeper())
     .then(() => closeRedis())
     .then(() => {
       server.close(() => process.exit(0));

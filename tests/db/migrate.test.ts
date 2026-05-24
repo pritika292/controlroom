@@ -20,6 +20,7 @@ describeIfDb("migrate", () => {
     await client.query("DROP TABLE IF EXISTS deploys");
     await client.query("DROP TABLE IF EXISTS commits_cache");
     await client.query("DROP TABLE IF EXISTS issues_cache");
+    await client.query("DROP TABLE IF EXISTS site_visits");
     await client.query("DROP TABLE IF EXISTS _migrations");
   });
 
@@ -27,28 +28,29 @@ describeIfDb("migrate", () => {
     await client.end();
   });
 
-  it("runs cleanly on an empty DB and records 4 entries in _migrations", async () => {
+  it("runs cleanly on an empty DB and records 5 entries in _migrations", async () => {
     const result = await migrate(client);
-    expect(result.applied).toHaveLength(4);
+    expect(result.applied).toHaveLength(5);
     expect(result.applied).toContain("001_health_pings.sql");
     expect(result.applied).toContain("002_deploys.sql");
     expect(result.applied).toContain("003_commits_cache.sql");
     expect(result.applied).toContain("004_issues_cache.sql");
+    expect(result.applied).toContain("005_site_visits.sql");
     expect(result.skipped).toHaveLength(0);
 
     const { rows } = await client.query<{ name: string }>("SELECT name FROM _migrations");
-    expect(rows).toHaveLength(4);
+    expect(rows).toHaveLength(5);
   });
 
-  it("is idempotent: re-running leaves 4 entries, nothing re-applied", async () => {
+  it("is idempotent: re-running leaves 5 entries, nothing re-applied", async () => {
     await migrate(client);
 
     const second = await migrate(client);
     expect(second.applied).toHaveLength(0);
-    expect(second.skipped).toHaveLength(4);
+    expect(second.skipped).toHaveLength(5);
 
     const { rows } = await client.query<{ name: string }>("SELECT name FROM _migrations");
-    expect(rows).toHaveLength(4);
+    expect(rows).toHaveLength(5);
   });
 
   it("health_pings table has expected columns", async () => {

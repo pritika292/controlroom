@@ -34,4 +34,18 @@ describe("getOnly middleware", () => {
     const res = await request(app).head("/health");
     expect(res.status).not.toBe(405);
   });
+
+  it("POST /api/visit/<slug> passes through the allow-list", async () => {
+    const app = createApp();
+    const res = await request(app).post("/api/visit/shortlive");
+    // The visit ingest handler returns 204 for a live slug; the important
+    // thing is that getOnly doesn't intercept with 405.
+    expect(res.status).not.toBe(405);
+  });
+
+  it("POST /api/visit/<too-long-slug> is rejected by the regex", async () => {
+    const app = createApp();
+    const res = await request(app).post(`/api/visit/${"a".repeat(50)}`);
+    expect(res.status).toBe(405);
+  });
 });
