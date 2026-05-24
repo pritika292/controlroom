@@ -35,7 +35,17 @@ export function About(): JSX.Element {
       <p className="te-label">ABOUT / CONTROLROOM</p>
       <h1 className="mt-2 font-mono text-3xl text-zinc-900 dark:text-white">What this is.</h1>
 
-      <div className="mt-10 grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+      {/* Full-width architecture diagram. Lived in the middle column
+          originally and was too squeezed to read. Now spans the page so
+          labels and edges are legible on a normal monitor. */}
+      <section className="mt-10 te-panel p-6 lg:p-8">
+        <p className="te-label">ARCHITECTURE</p>
+        <div className="mt-4">
+          <ArchDiagram />
+        </div>
+      </section>
+
+      <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
         {/* Left: story */}
         <section className="space-y-6">
           <p className="te-label">STORY</p>
@@ -63,12 +73,9 @@ export function About(): JSX.Element {
           </p>
         </section>
 
-        {/* Middle: diagram + tech */}
+        {/* Middle: tech list (diagram moved to its own full-width section above). */}
         <section className="space-y-6">
           <p className="te-label">TECH</p>
-          <div className="te-panel p-5">
-            <ArchDiagram />
-          </div>
           <dl className="space-y-3">
             {TECH.map((t) => (
               <div key={t.name}>
