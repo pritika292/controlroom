@@ -2,12 +2,12 @@ import { getPool } from "../db/pool.js";
 import { getRedis } from "./redis.js";
 import { getLiveProjects } from "../projects.js";
 import { aggregateVisits } from "./visits.js";
+import { aiUsageSummary, type AiUsageSummary } from "./aiUsage.js";
 
 // Cheap-to-derive infra signals for the richer tile grid (#86). Everything
 // here reads from data the existing services are already producing —
-// health_pings, deploys, site_visits, issues_cache, pg_stat_*, Redis INFO.
-// Anything that'd need a new collector (AI calls, p95 request latency)
-// stays out until that collector lands.
+// health_pings, deploys, site_visits, issues_cache, pg_stat_*, Redis INFO,
+// ai_usage (populated by the AI-using projects via /api/ai-usage/:slug).
 
 export interface InfraExtras {
   visitsThisWeek: number; // sum across all live projects
@@ -15,9 +15,9 @@ export interface InfraExtras {
   openIssues: number;
   pgConnections: { used: number; max: number };
   redisKeys: number;
-  largestTable: { name: string; rows: number } | null;
   lastDeploy: { slug: string; whenMs: number; status: string } | null;
   uptime7dPct: number | null; // % of pings that were 'up' over the last 7d
+  ai: AiUsageSummary;
 }
 
 export async function infraExtras(): Promise<InfraExtras> {
@@ -32,9 +32,9 @@ export async function infraExtras(): Promise<InfraExtras> {
     pgConnRow,
     pgMaxRow,
     redisDbSize,
-    largestTableRow,
     lastDeployRow,
     pingsRow,
+    ai,
   ] = await Promise.all([
     aggregateVisits(liveSlugs),
     pool.query<{ n: string }>(
@@ -48,12 +48,6 @@ export async function infraExtras(): Promise<InfraExtras> {
       "SELECT setting FROM pg_settings WHERE name = 'max_connections'",
     ),
     redis.dbsize(),
-    pool.query<{ relname: string; n_live_tup: string }>(
-      `SELECT relname, n_live_tup::text
-         FROM pg_stat_user_tables
-        ORDER BY n_live_tup DESC NULLS LAST
-        LIMIT 1`,
-    ),
     pool.query<{ project: string; finished_at: Date; status: string }>(
       `SELECT project, finished_at, status
          FROM deploys
@@ -67,6 +61,7 @@ export async function infraExtras(): Promise<InfraExtras> {
          FROM health_pings
         WHERE ts >= now() - interval '7 days'`,
     ),
+    aiUsageSummary(),
   ]);
 
   const visitsThisWeek = visitRows.reduce((acc, r) => acc + r.thisWeek, 0);
@@ -75,10 +70,6 @@ export async function infraExtras(): Promise<InfraExtras> {
     used: Number(pgConnRow.rows[0]?.n ?? 0),
     max: Number(pgMaxRow.rows[0]?.setting ?? 0),
   };
-
-  const largest = largestTableRow.rows[0];
-  const largestTable =
-    largest === undefined ? null : { name: largest.relname, rows: Number(largest.n_live_tup) };
 
   const ld = lastDeployRow.rows[0];
   const lastDeploy =
@@ -96,8 +87,8 @@ export async function infraExtras(): Promise<InfraExtras> {
     openIssues: Number(openIssuesRow.rows[0]?.n ?? 0),
     pgConnections,
     redisKeys: redisDbSize,
-    largestTable,
     lastDeploy,
     uptime7dPct,
+    ai,
   };
 }

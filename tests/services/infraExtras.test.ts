@@ -19,6 +19,7 @@ describeIfDb("infraExtras", () => {
     await client.query("TRUNCATE deploys");
     await client.query("TRUNCATE issues_cache");
     await client.query("TRUNCATE health_pings");
+    await client.query("TRUNCATE ai_usage");
     const redis = getRedis();
     await redis.flushdb();
   });
@@ -75,7 +76,9 @@ describeIfDb("infraExtras", () => {
     expect(x.lastDeploy).not.toBeNull();
     expect(x.lastDeploy?.slug).toBe("shortlive");
     expect(x.lastDeploy?.status).toBe("success");
-    expect(x.largestTable).not.toBeNull();
+    expect(x.ai.callsToday).toBe(0);
+    expect(x.ai.callsThisWeek).toBe(0);
+    expect(x.ai.modelInUse).toBeNull();
   });
 
   it("returns null trend fields when there is no data", async () => {

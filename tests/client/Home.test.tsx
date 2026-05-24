@@ -94,9 +94,15 @@ describe("<Home />", () => {
               openIssues: 0,
               pgConnections: { used: 0, max: 100 },
               redisKeys: 0,
-              largestTable: null,
               lastDeploy: null,
               uptime7dPct: null,
+              ai: {
+                callsToday: 0,
+                tokensToday: 0,
+                costTodayCents: 0,
+                callsThisWeek: 0,
+                modelInUse: null,
+              },
             }),
           };
         }

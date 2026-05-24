@@ -77,15 +77,27 @@ function buildTiles(d: InfraExtras): TileSpec[] {
       value: d.redisKeys.toLocaleString(),
       sub: "DB 12",
     },
+    {
+      label: "AI CALLS / TODAY",
+      value: (d.ai?.callsToday ?? 0).toLocaleString(),
+      sub: `${(d.ai?.callsThisWeek ?? 0).toLocaleString()} / 7D`,
+    },
+    {
+      label: "TOKENS / TODAY",
+      value: formatCompact(d.ai?.tokensToday ?? 0),
+      sub: "PROMPT + COMPLETION",
+    },
+    {
+      label: "AI COST / TODAY",
+      value: formatCents(d.ai?.costTodayCents ?? 0),
+      sub: "ESTIMATED",
+    },
+    {
+      label: "MODEL",
+      value: d.ai?.modelInUse ?? "—",
+      sub: "AZURE OPENAI",
+    },
   ];
-
-  if (d.largestTable !== null) {
-    tiles.push({
-      label: "LARGEST TABLE",
-      value: d.largestTable.rows.toLocaleString(),
-      sub: d.largestTable.name.toUpperCase(),
-    });
-  }
 
   if (d.lastDeploy !== null) {
     tiles.push({
@@ -96,4 +108,19 @@ function buildTiles(d: InfraExtras): TileSpec[] {
   }
 
   return tiles;
+}
+
+// 12345 → "12.3K"; 9876543 → "9.9M". Keeps tokens-per-day legible.
+function formatCompact(n: number): string {
+  if (n < 1_000) return n.toString();
+  if (n < 1_000_000) return `${(n / 1_000).toFixed(1)}K`;
+  return `${(n / 1_000_000).toFixed(1)}M`;
+}
+
+function formatCents(cents: number): string {
+  // cents is float-ish (numeric(10,4) from pg). Sub-cent days render with
+  // extra decimals so a fraction-of-a-penny day doesn't read as $0.00.
+  const dollars = cents / 100;
+  if (dollars >= 1) return `$${dollars.toFixed(2)}`;
+  return `$${dollars.toFixed(4)}`;
 }

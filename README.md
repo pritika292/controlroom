@@ -1,6 +1,6 @@
 # controlroom
 
-> Public, read-only status board for an eleven-project portfolio. Live health pings, GitHub deploy webhooks, SSE-pushed updates. One Azure VM, no admin surface.
+> Public, read-only status board for a five-project portfolio. Live health pings, GitHub deploy webhooks, SSE-pushed updates. One Azure VM, no admin surface.
 
 [![ci](https://github.com/pritika292/controlroom/actions/workflows/ci.yml/badge.svg)](https://github.com/pritika292/controlroom/actions/workflows/ci.yml)
 [![deploy](https://github.com/pritika292/controlroom/actions/workflows/deploy.yml/badge.svg)](https://github.com/pritika292/controlroom/actions/workflows/deploy.yml)
@@ -22,13 +22,13 @@
 ![Vitest](https://img.shields.io/badge/-Vitest-6E9F18?logo=vitest&logoColor=white)
 ![Helmet](https://img.shields.io/badge/-Helmet-1F2937)
 
-**Live**: <https://controlroom.pritika.studio/>  ·  every project carries a device code (CR-01 ... CR-11) in the Teenage Engineering catalog vocabulary.
+**Live**: <https://controlroom.pritika.studio/>  ·  every project carries a device code (CR-01 ... CR-05) in the Teenage Engineering catalog vocabulary.
 
 ---
 
 ## What it is
 
-A public, read-only status board for eleven projects that share one Azure VM. It does three things that small status pages usually don't:
+A public, read-only status board for five projects that share one Azure VM. It does three things that small status pages usually don't:
 
 1. **Real live updates, not five-second polling.** A health poller flips a project's last-seen status; the poller publishes a `status_change` event into an in-memory SSE hub; every open browser repaints the dot before the next poll fires. The 5-second client poll is a fallback for when the SSE socket is mid-reconnect.
 
@@ -89,7 +89,7 @@ One subscription, one resource group, one always-on VM. The cloud-native bits ar
 
 | Azure service | Used for |
 |---|---|
-| **Azure VM** (`B2as_v2`, AMD, Ubuntu 22.04, northcentralus) | Shared host for the entire 11-project portfolio. Docker-compose stack: controlroom + shortlive + sibling apps + shared Postgres 16 + shared Redis 7. ~$30/mo on Visual Studio Enterprise credits. |
+| **Azure VM** (`B2as_v2`, AMD, Ubuntu 22.04, northcentralus) | Shared host for the entire portfolio. Docker-compose stack: controlroom + shortlive + sibling apps + shared Postgres 16 + shared Redis 7. ~$30/mo on Visual Studio Enterprise credits. |
 | **Azure Entra ID + Federated Identity Credentials** | Zero stored Azure credentials in the repo. GitHub Actions exchanges its workflow OIDC token for a short-lived Azure access token via `azure/login@v2`. Per-repo FIC restricted to `repo:pritika292/controlroom:ref:refs/heads/main`. |
 | **Azure RBAC** | The federated app principal has `Virtual Machine Contributor` on one VM only. Can't create resources, can't read secrets, can't touch other RGs. |
 | **System-assigned Managed Identity (on the VM)** | The VM authenticates to Key Vault via its own identity. No keys, no service-principal secrets, nothing to rotate. |
@@ -194,8 +194,8 @@ Each one named, each justified by the failure mode it solves.
           ▼                                 │ incident banner   │
    ┌──────────────────┐                     │ STATUS / OFFLINE  │
    │ shortlive  :3010 │                     │ chip in header    │
-   │ (and 10 more     │                     └───────────────────┘
-   │ when they ship)  │
+   │ (and the rest    │                     └───────────────────┘
+   │  of the family)  │
    └──────────────────┘
 
    ┌────────────────────────┐ hourly         ┌───────────────────────┐
