@@ -23,11 +23,27 @@ export function IssuesPanel(): JSX.Element {
       ) : issues.length === 0 ? (
         <p className="mt-3 te-label">NO {state.toUpperCase()} ISSUES</p>
       ) : (
-        <ul className="mt-3 divide-y divide-zinc-100 dark:divide-zinc-900">
-          {issues.map((i) => (
-            <IssueRow key={`${i.project}#${i.number}`} issue={i} />
-          ))}
-        </ul>
+        <>
+          <ul className="mt-3 divide-y divide-zinc-100 dark:divide-zinc-900">
+            {issues.map((i) => (
+              <IssueRow key={`${i.project}#${i.number}`} issue={i} />
+            ))}
+          </ul>
+          {/* If the panel is full there might be more — link out to the
+              full triage queue on GitHub (#84). */}
+          {issues.length >= 5 && (
+            <p className="mt-3 te-label">
+              <a
+                href="https://github.com/pritika292?tab=projects"
+                target="_blank"
+                rel="noreferrer"
+                className="text-accent hover:underline"
+              >
+                view all on github →
+              </a>
+            </p>
+          )}
+        </>
       )}
     </article>
   );

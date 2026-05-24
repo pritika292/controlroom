@@ -97,8 +97,8 @@ describeIfDb("githubSync", () => {
       message: string;
       author: string;
     }>("SELECT project, sha, message, author FROM commits_cache ORDER BY project, sha");
-    // 4 live projects × 2 commits each = 8 rows
-    expect(rows).toHaveLength(8);
+    // 5 live projects × 2 commits each = 10 rows
+    expect(rows).toHaveLength(10);
     const shortliveRows = rows.filter((r) => r.project === "shortlive");
     expect(shortliveRows).toHaveLength(2);
     expect(shortliveRows[0]!.sha).toBe("a".repeat(40));
@@ -128,8 +128,8 @@ describeIfDb("githubSync", () => {
     await syncOnce();
 
     const { rows } = await client.query<{ n: string }>("SELECT count(*) AS n FROM commits_cache");
-    // 4 live projects × 1 commit = 4 rows; re-running doesn't dupe.
-    expect(Number(rows[0]!.n)).toBe(4);
+    // 5 live projects × 1 commit = 5 rows; re-running doesn't dupe.
+    expect(Number(rows[0]!.n)).toBe(5);
   });
 
   it("logs and continues when GitHub returns non-2xx", async () => {
@@ -196,8 +196,8 @@ describeIfDb("githubSync", () => {
       status: string;
       actor: string;
     }>("SELECT project, sha, status, actor FROM deploys ORDER BY project");
-    // 4 live projects × 1 deploy each (the CI run is filtered out) = 4 rows.
-    expect(rows).toHaveLength(4);
+    // 5 live projects × 1 deploy each (the CI run is filtered out) = 5 rows.
+    expect(rows).toHaveLength(5);
     const shortliveRow = rows.find((r) => r.project === "shortlive");
     expect(shortliveRow?.status).toBe("success");
     expect(shortliveRow?.actor).toBe("pritika292");
@@ -220,8 +220,8 @@ describeIfDb("githubSync", () => {
 
     {
       const { rows } = await client.query<{ n: string }>("SELECT count(*) AS n FROM issues_cache");
-      // 4 live projects × 2 non-PR issues = 8 rows.
-      expect(Number(rows[0]!.n)).toBe(8);
+      // 5 live projects × 2 non-PR issues = 10 rows.
+      expect(Number(rows[0]!.n)).toBe(10);
     }
 
     // Second pass: issue #1 now closed. Upsert should flip state in place.

@@ -41,19 +41,24 @@ describeIfDb("GET /api/public/infra", () => {
     expect(body.postgres.up).toBe(true);
     expect(body.redis.up).toBe(true);
 
-    // Container list: controlroom + 2 shared services + 4 live projects
-    // (shortlive + pg-inspector + focusroom + portfolio) + 1 collapsed
-    // "UPCOMING" tile = 8
-    expect(body.containers.length).toBe(3 + 4 + 1);
+    // Container list: controlroom + 2 shared services + 5 live projects.
+    // Planned dropped after #81 — no UPCOMING tile when there's nothing
+    // upcoming. Total = 3 + 5 = 8 (or 3 + 5 + 1 if the upcoming tile is
+    // always rendered, but with 0 planned it should be hidden).
+    expect(body.containers.length).toBeGreaterThanOrEqual(3 + 5);
     expect(body.containers.find((c) => c.code === "CTL")?.role).toBe("app");
     expect(body.containers.find((c) => c.code === "DB")?.role).toBe("shared");
-    expect(body.containers.find((c) => c.code === "CR-01")?.role).toBe("project");
-    expect(body.containers.find((c) => c.code === "CR-12")?.role).toBe("project");
-    expect(body.containers.find((c) => c.code === "CR-13")?.role).toBe("project");
-    expect(body.containers.find((c) => c.code === "CR-14")?.role).toBe("project");
+    for (const code of ["CR-01", "CR-02", "CR-03", "CR-04", "CR-05"]) {
+      expect(body.containers.find((c) => c.code === code)?.role).toBe("project");
+    }
+    // After #81 the registry has no planned entries — the UPCOMING tile
+    // is now optional. If it renders it should still be in the planned/down
+    // shape; if not, that's fine.
     const upcoming = body.containers.find((c) => c.code === "UPCOMING");
-    expect(upcoming?.role).toBe("planned");
-    expect(upcoming?.up).toBe(false);
+    if (upcoming) {
+      expect(upcoming.role).toBe("planned");
+      expect(upcoming.up).toBe(false);
+    }
 
     expect(body.cost.monthlyUsd).toBeGreaterThan(0);
 

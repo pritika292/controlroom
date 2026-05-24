@@ -32,7 +32,11 @@ describeIfDb("GET /api/public/projects/:slug/pings", () => {
     expect(res.status).toBe(404);
   });
 
-  it("returns 200 with empty array for a planned project", async () => {
+  // After #81 the registry has no planned entries (hookrelay was dropped
+  // along with the rest of the never-shipped slots), so this codepath
+  // isn't reachable through the public registry. Skipping rather than
+  // deleting so the contract is documented if planned projects come back.
+  it.skip("returns 200 with empty array for a planned project", async () => {
     const app = createApp();
     const res = await request(app).get("/api/public/projects/hookrelay/pings?window=24h");
     expect(res.status).toBe(200);

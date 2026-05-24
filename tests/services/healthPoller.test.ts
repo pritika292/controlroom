@@ -59,7 +59,7 @@ describeIfDb("healthPoller", () => {
     );
 
     // 4 live projects (shortlive, pg-inspector, focusroom, portfolio).
-    expect(rows).toHaveLength(4);
+    expect(rows).toHaveLength(5);
     const shortlive = rows.find((r) => r.project === "shortlive");
     expect(shortlive?.status).toBe("up");
     expect(shortlive?.latency_ms).not.toBeNull();
@@ -76,7 +76,7 @@ describeIfDb("healthPoller", () => {
       "SELECT project, status, latency_ms FROM health_pings",
     );
 
-    expect(rows).toHaveLength(4);
+    expect(rows).toHaveLength(5);
     expect(rows[0]!.status).toBe("timeout");
     expect(rows[0]!.latency_ms).toBeNull();
   });
@@ -97,7 +97,7 @@ describeIfDb("healthPoller", () => {
       "SELECT project, status, latency_ms FROM health_pings",
     );
 
-    expect(rows).toHaveLength(4);
+    expect(rows).toHaveLength(5);
     expect(rows[0]!.status).toBe("down");
     expect(rows[0]!.latency_ms).not.toBeNull();
   });
@@ -117,7 +117,7 @@ describeIfDb("healthPoller", () => {
       "SELECT project, status, latency_ms FROM health_pings",
     );
 
-    expect(rows).toHaveLength(4);
+    expect(rows).toHaveLength(5);
     expect(rows[0]!.status).toBe("error");
   });
 
@@ -148,7 +148,7 @@ describeIfDb("healthPoller", () => {
     );
 
     // Only the fresh row should remain.
-    expect(rows).toHaveLength(4);
+    expect(rows).toHaveLength(5);
     // The remaining row is recent (within the last minute).
     const ageMs = Date.now() - new Date(rows[0]!.ts).getTime();
     expect(ageMs).toBeLessThan(60_000);
@@ -162,25 +162,15 @@ describeIfDb("healthPoller", () => {
 
     await pollOnce();
 
-    // One status_change per live project (shortlive, pg-inspector,
-    // focusroom, portfolio).
-    expect(publish).toHaveBeenCalledTimes(4);
-    expect(publish).toHaveBeenCalledWith(
-      "status_change",
-      expect.objectContaining({ slug: "shortlive", previous: null, status: "up" }),
-    );
-    expect(publish).toHaveBeenCalledWith(
-      "status_change",
-      expect.objectContaining({ slug: "pg-inspector", previous: null, status: "up" }),
-    );
-    expect(publish).toHaveBeenCalledWith(
-      "status_change",
-      expect.objectContaining({ slug: "focusroom", previous: null, status: "up" }),
-    );
-    expect(publish).toHaveBeenCalledWith(
-      "status_change",
-      expect.objectContaining({ slug: "portfolio", previous: null, status: "up" }),
-    );
+    // One status_change per live project (focusroom, controlroom,
+    // pg-inspector, shortlive, portfolio).
+    expect(publish).toHaveBeenCalledTimes(5);
+    for (const slug of ["shortlive", "pg-inspector", "focusroom", "portfolio", "controlroom"]) {
+      expect(publish).toHaveBeenCalledWith(
+        "status_change",
+        expect.objectContaining({ slug, previous: null, status: "up" }),
+      );
+    }
   });
 
   it("does not publish when status stays the same across polls", async () => {
@@ -207,23 +197,13 @@ describeIfDb("healthPoller", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500 }));
     await pollOnce();
 
-    // All four live projects flip up -> down on the second poll.
-    expect(publish).toHaveBeenCalledTimes(4);
-    expect(publish).toHaveBeenCalledWith(
-      "status_change",
-      expect.objectContaining({ slug: "shortlive", previous: "up", status: "down" }),
-    );
-    expect(publish).toHaveBeenCalledWith(
-      "status_change",
-      expect.objectContaining({ slug: "pg-inspector", previous: "up", status: "down" }),
-    );
-    expect(publish).toHaveBeenCalledWith(
-      "status_change",
-      expect.objectContaining({ slug: "focusroom", previous: "up", status: "down" }),
-    );
-    expect(publish).toHaveBeenCalledWith(
-      "status_change",
-      expect.objectContaining({ slug: "portfolio", previous: "up", status: "down" }),
-    );
+    // All five live projects flip up -> down on the second poll.
+    expect(publish).toHaveBeenCalledTimes(5);
+    for (const slug of ["shortlive", "pg-inspector", "focusroom", "portfolio", "controlroom"]) {
+      expect(publish).toHaveBeenCalledWith(
+        "status_change",
+        expect.objectContaining({ slug, previous: "up", status: "down" }),
+      );
+    }
   });
 });

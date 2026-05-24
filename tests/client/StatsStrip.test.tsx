@@ -11,8 +11,8 @@ describe("<StatsStrip />", () => {
       vi.fn().mockResolvedValue({
         ok: true,
         json: async () => ({
-          projectsLive: 2,
-          projectsTotal: 12,
+          projectsLive: 5,
+          projectsTotal: 5,
           commitsCached: 42,
           deploysLastWeek: 7,
         }),
@@ -20,7 +20,7 @@ describe("<StatsStrip />", () => {
     );
     render(<StatsStrip />);
     await waitFor(() => {
-      expect(screen.getByText("2/12")).toBeInTheDocument();
+      expect(screen.getByText("5/5")).toBeInTheDocument();
     });
     expect(screen.getByText("7")).toBeInTheDocument();
     expect(screen.getByText("42")).toBeInTheDocument();
