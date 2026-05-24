@@ -2,18 +2,34 @@ import { describe, it, expect } from "vitest";
 import { projects, getLiveProjects, getProject } from "../src/server/projects.js";
 
 describe("project registry", () => {
-  it("has 12 entries", () => {
-    expect(projects).toHaveLength(12);
+  it("has 14 entries", () => {
+    expect(projects).toHaveLength(14);
   });
 
   it("is frozen", () => {
     expect(Object.isFrozen(projects)).toBe(true);
   });
 
-  it("getLiveProjects returns shortlive and pg-inspector", () => {
+  it("getLiveProjects returns the four currently-live projects", () => {
     const live = getLiveProjects();
     const slugs = live.map((p) => p.slug).sort();
-    expect(slugs).toEqual(["pg-inspector", "shortlive"]);
+    expect(slugs).toEqual(["focusroom", "pg-inspector", "portfolio", "shortlive"]);
+  });
+
+  it("getProject finds focusroom", () => {
+    const p = getProject("focusroom");
+    expect(p).toBeDefined();
+    expect(p?.status).toBe("live");
+    expect(p?.liveUrl).toBe("https://focusroom.pritika.studio");
+    expect(p?.repo).toBe("pritika292/focusroom");
+  });
+
+  it("getProject finds portfolio with apex-domain liveUrl", () => {
+    const p = getProject("portfolio");
+    expect(p).toBeDefined();
+    expect(p?.status).toBe("live");
+    expect(p?.liveUrl).toBe("https://pritika.studio");
+    expect(p?.repo).toBe("pritika292/portfolio");
   });
 
   it("getProject finds shortlive", () => {
