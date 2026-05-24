@@ -24,11 +24,30 @@ const INFRA_BODY = {
   cost: { monthlyUsd: 30, note: "estimate at on-demand prices" },
 };
 
+const INFRA_EXTRAS_BODY = {
+  visitsThisWeek: 17,
+  deploysThisWeek: 5,
+  openIssues: 3,
+  pgConnections: { used: 4, max: 100 },
+  redisKeys: 12,
+  largestTable: { name: "health_pings", rows: 1234 },
+  lastDeploy: { slug: "shortlive", whenMs: Date.now() - 10_000, status: "success" },
+  uptime7dPct: 99.5,
+};
+
+function urlAwareFetch(): ReturnType<typeof vi.fn> {
+  return vi.fn((input: RequestInfo | URL) => {
+    const url = typeof input === "string" ? input : input.toString();
+    const body = url.includes("/api/public/infra-extras") ? INFRA_EXTRAS_BODY : INFRA_BODY;
+    return Promise.resolve({ ok: true, json: async () => body });
+  });
+}
+
 describe("<InfraPanel />", () => {
   afterEach(() => vi.unstubAllGlobals());
 
   it("renders the VM card, services card, cost card, and container grid", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => INFRA_BODY }));
+    vi.stubGlobal("fetch", urlAwareFetch());
     render(<InfraPanel />);
 
     await waitFor(() => {

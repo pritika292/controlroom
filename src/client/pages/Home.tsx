@@ -13,12 +13,14 @@ import { useInfra } from "../hooks/useInfra.js";
 import { useSSE } from "../hooks/useSSE.js";
 import { useStatus } from "../hooks/useStatus.js";
 import { useVisits } from "../hooks/useVisits.js";
+import { useVisitBeacon } from "../hooks/useVisitBeacon.js";
 
 interface StatusChangePayload {
   slug?: string;
 }
 
 export function Home(): JSX.Element {
+  useVisitBeacon();
   const { data, error, loading, refresh } = useStatus();
   const { infra } = useInfra();
   const { data: visits } = useVisits();
