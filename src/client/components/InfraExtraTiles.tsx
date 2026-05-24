@@ -7,7 +7,9 @@ import { relativeTime } from "../lib/relativeTime.js";
 
 export function InfraExtraTiles(): JSX.Element | null {
   const { data } = useInfraExtras();
-  if (data === null) return null;
+  // Be defensive: missing top-level fields (older deploys, mocked tests,
+  // partial responses) shouldn't crash the panel.
+  if (data === null || typeof data.visitsThisWeek !== "number") return null;
 
   const tiles = buildTiles(data);
 

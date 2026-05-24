@@ -85,6 +85,21 @@ describe("<Home />", () => {
             }),
           };
         }
+        if (url === "/api/public/infra-extras") {
+          return {
+            ok: true,
+            json: async () => ({
+              visitsThisWeek: 0,
+              deploysThisWeek: 0,
+              openIssues: 0,
+              pgConnections: { used: 0, max: 100 },
+              redisKeys: 0,
+              largestTable: null,
+              lastDeploy: null,
+              uptime7dPct: null,
+            }),
+          };
+        }
         return { ok: true, json: async () => [] };
       }),
     );
