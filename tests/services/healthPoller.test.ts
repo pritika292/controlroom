@@ -58,12 +58,13 @@ describeIfDb("healthPoller", () => {
       "SELECT project, status, latency_ms FROM health_pings ORDER BY project",
     );
 
-    // Only shortlive is live in the registry.
-    expect(rows).toHaveLength(1);
-    expect(rows[0]!.project).toBe("shortlive");
-    expect(rows[0]!.status).toBe("up");
-    expect(rows[0]!.latency_ms).not.toBeNull();
-    expect(rows[0]!.latency_ms).toBeGreaterThanOrEqual(0);
+    // shortlive + pg-inspector are live; both should ping.
+    expect(rows).toHaveLength(2);
+    const shortlive = rows.find((r) => r.project === "shortlive");
+    expect(shortlive?.status).toBe("up");
+    expect(shortlive?.latency_ms).not.toBeNull();
+    expect(shortlive?.latency_ms).toBeGreaterThanOrEqual(0);
+    expect(rows.find((r) => r.project === "pg-inspector")).toBeDefined();
   });
 
   it("inserts status=timeout and latency_ms=null when fetch throws AbortError", async () => {
@@ -75,7 +76,7 @@ describeIfDb("healthPoller", () => {
       "SELECT project, status, latency_ms FROM health_pings",
     );
 
-    expect(rows).toHaveLength(1);
+    expect(rows).toHaveLength(2);
     expect(rows[0]!.status).toBe("timeout");
     expect(rows[0]!.latency_ms).toBeNull();
   });
@@ -96,7 +97,7 @@ describeIfDb("healthPoller", () => {
       "SELECT project, status, latency_ms FROM health_pings",
     );
 
-    expect(rows).toHaveLength(1);
+    expect(rows).toHaveLength(2);
     expect(rows[0]!.status).toBe("down");
     expect(rows[0]!.latency_ms).not.toBeNull();
   });
@@ -116,7 +117,7 @@ describeIfDb("healthPoller", () => {
       "SELECT project, status, latency_ms FROM health_pings",
     );
 
-    expect(rows).toHaveLength(1);
+    expect(rows).toHaveLength(2);
     expect(rows[0]!.status).toBe("error");
   });
 
@@ -128,7 +129,7 @@ describeIfDb("healthPoller", () => {
     );
 
     // Confirm the stale row is there before polling.
-    const before = await client.query("SELECT count(*) AS n FROM health_pings");
+    const before = await client.query<{ n: string }>("SELECT count(*) AS n FROM health_pings");
     expect(Number(before.rows[0]!.n)).toBe(1);
 
     vi.stubGlobal(
@@ -147,7 +148,7 @@ describeIfDb("healthPoller", () => {
     );
 
     // Only the fresh row should remain.
-    expect(rows).toHaveLength(1);
+    expect(rows).toHaveLength(2);
     // The remaining row is recent (within the last minute).
     const ageMs = Date.now() - new Date(rows[0]!.ts).getTime();
     expect(ageMs).toBeLessThan(60_000);
@@ -161,10 +162,15 @@ describeIfDb("healthPoller", () => {
 
     await pollOnce();
 
-    expect(publish).toHaveBeenCalledTimes(1);
+    // One status_change per live project (shortlive + pg-inspector).
+    expect(publish).toHaveBeenCalledTimes(2);
     expect(publish).toHaveBeenCalledWith(
       "status_change",
       expect.objectContaining({ slug: "shortlive", previous: null, status: "up" }),
+    );
+    expect(publish).toHaveBeenCalledWith(
+      "status_change",
+      expect.objectContaining({ slug: "pg-inspector", previous: null, status: "up" }),
     );
   });
 
@@ -192,10 +198,15 @@ describeIfDb("healthPoller", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500 }));
     await pollOnce();
 
-    expect(publish).toHaveBeenCalledTimes(1);
+    // Both projects flip up -> down on the second poll.
+    expect(publish).toHaveBeenCalledTimes(2);
     expect(publish).toHaveBeenCalledWith(
       "status_change",
       expect.objectContaining({ slug: "shortlive", previous: "up", status: "down" }),
+    );
+    expect(publish).toHaveBeenCalledWith(
+      "status_change",
+      expect.objectContaining({ slug: "pg-inspector", previous: "up", status: "down" }),
     );
   });
 });

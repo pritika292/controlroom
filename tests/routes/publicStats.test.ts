@@ -48,8 +48,8 @@ describeIfDb("GET /api/public/stats", () => {
       commitsCached: number;
       deploysLastWeek: number;
     };
-    expect(body.projectsLive).toBe(1);
-    expect(body.projectsTotal).toBe(11);
+    expect(body.projectsLive).toBe(2);
+    expect(body.projectsTotal).toBe(12);
     expect(body.commitsCached).toBe(2);
     // Last 7 days: only the rows at -1d and -3d (the -10d row is excluded).
     expect(body.deploysLastWeek).toBe(2);
