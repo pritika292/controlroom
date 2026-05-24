@@ -97,7 +97,7 @@ describe("<Home />", () => {
   it("renders the page title and tagline", () => {
     renderHome();
     expect(screen.getByRole("heading", { name: "STATUS BOARD" })).toBeInTheDocument();
-    expect(screen.getByText(/Eleven projects/i)).toBeInTheDocument();
+    expect(screen.getByText(/Five projects/i)).toBeInTheDocument();
   });
 
   it("renders a card per LIVE project plus one UPCOMING card after fetch resolves", async () => {

@@ -2,15 +2,20 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Sparkline } from "./Sparkline.js";
 import { StatusDot } from "./StatusDot.js";
+import { VisitTile } from "./VisitTile.js";
 import { useProjectPings } from "../hooks/useProjectPings.js";
 import { relativeTime } from "../lib/relativeTime.js";
 import type { ProjectStatus } from "../hooks/useStatus.js";
+import type { VisitAggregate } from "../hooks/useVisits.js";
 
 interface Props {
   project: ProjectStatus;
   // Bumped by the parent whenever an SSE status_change event mentions this
   // project. When it bumps, the card runs a brief pulse animation.
   flashKey?: number;
+  // This-week visit count for the project, surfaced as a small tile under
+  // the latency line. Null while loading or for projects with no beacon yet.
+  visit?: VisitAggregate | null;
 }
 
 function lastSeenLabel(project: ProjectStatus, now: number): string {
@@ -21,7 +26,7 @@ function lastSeenLabel(project: ProjectStatus, now: number): string {
 
 const FLASH_DURATION_MS = 900;
 
-export function ProjectCard({ project, flashKey }: Props): JSX.Element {
+export function ProjectCard({ project, flashKey, visit = null }: Props): JSX.Element {
   const { pings } = useProjectPings(project.status === "live" ? project.slug : null);
 
   const [now, setNow] = useState<number>(() => Date.now());
@@ -82,12 +87,15 @@ export function ProjectCard({ project, flashKey }: Props): JSX.Element {
         <Sparkline pings={pings} width={280} height={28} />
       </div>
 
-      {/* Inline click affordance (#85). Sits at the bottom of the card,
-          subtle by default, brightens to a solid accent on hover. */}
       {!isPlanned && (
-        <p className="mt-3 te-label text-accent/70 group-hover:text-accent text-right">
-          open status page →
-        </p>
+        <div className="mt-3 flex items-center justify-between gap-2">
+          <VisitTile entry={visit} />
+          {/* Inline click affordance (#85). Subtle by default, brightens
+              to a solid accent on hover. */}
+          <span className="te-label text-accent/70 group-hover:text-accent">
+            open status page →
+          </span>
+        </div>
       )}
     </article>
   );

@@ -7,8 +7,10 @@ import { LatencyHistogram } from "../components/LatencyHistogram.js";
 import { Sparkline } from "../components/Sparkline.js";
 import { StatusDot } from "../components/StatusDot.js";
 import { StatusSegments } from "../components/StatusSegments.js";
+import { VisitChart } from "../components/VisitChart.js";
 import { useProjectPings, type ProjectPing } from "../hooks/useProjectPings.js";
 import { useStatus, type ProjectStatus } from "../hooks/useStatus.js";
+import { useDailyVisits } from "../hooks/useVisits.js";
 import { relativeTime } from "../lib/relativeTime.js";
 import { pingStats } from "../lib/pingStats.js";
 
@@ -64,6 +66,7 @@ export function Project(): JSX.Element {
   const { slug = "" } = useParams<{ slug: string }>();
   const { data, loading } = useStatus();
   const { pings, loading: pingsLoading } = useProjectPings(slug, 30_000, 200);
+  const { data: dailyVisits } = useDailyVisits(slug);
 
   const project = useMemo(() => data?.find((p) => p.slug === slug), [data, slug]);
   const stats = useMemo(() => pingStats(pings), [pings]);
@@ -156,6 +159,18 @@ export function Project(): JSX.Element {
         </div>
         <div className="mt-5">
           <StatusSegments pings={pings} />
+        </div>
+      </section>
+
+      {/* Visits chart — 30-day daily bars from the public visit pipeline (#87). */}
+      <section className="mt-3 te-panel p-5">
+        <p className="te-label">VISITS / 30D</p>
+        <div className="mt-3">
+          {dailyVisits === null ? (
+            <p className="te-label">LOADING...</p>
+          ) : (
+            <VisitChart data={dailyVisits} width={720} height={120} days={30} />
+          )}
         </div>
       </section>
 

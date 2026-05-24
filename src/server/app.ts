@@ -4,7 +4,7 @@ import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { securityHeaders } from "./middleware/securityHeaders.js";
 import { getOnly } from "./middleware/getOnly.js";
-import { publicReadLimiter, webhookLimiter } from "./middleware/rateLimit.js";
+import { publicReadLimiter, visitIngestLimiter, webhookLimiter } from "./middleware/rateLimit.js";
 import { sseRouter } from "./routes/sseStream.js";
 import { publicStatusRouter } from "./routes/publicStatus.js";
 import { projectPingsRouter } from "./routes/projectPings.js";
@@ -15,6 +15,8 @@ import { publicInfraRouter } from "./routes/publicInfra.js";
 import { publicIncidentsRouter } from "./routes/publicIncidents.js";
 import { publicDeployFrequencyRouter } from "./routes/publicDeployFrequency.js";
 import { publicIssuesRouter } from "./routes/publicIssues.js";
+import { publicVisitsRouter } from "./routes/publicVisits.js";
+import { visitIngestRouter } from "./routes/visitIngest.js";
 import { webhooksGithubRouter } from "./routes/webhooksGithub.js";
 
 const CLIENT_DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../client");
@@ -46,6 +48,12 @@ export function createApp(): Express {
     res.json({ ok: true });
   });
 
+  // Visit beacon (#87). Mounted before /api/public so its own (looser)
+  // limiter applies instead of publicReadLimiter. The POST is on the
+  // getOnly allow-list (POST_ALLOWLIST_REGEX).
+  app.use("/api/visit", visitIngestLimiter);
+  app.use(visitIngestRouter);
+
   // SSE hub — must come before the SPA fallback so /api/stream isn't swallowed.
   // Not rate-limited (long-lived connection, not request-shaped).
   app.use(sseRouter);
@@ -65,6 +73,7 @@ export function createApp(): Express {
   app.use(publicIncidentsRouter);
   app.use(publicDeployFrequencyRouter);
   app.use(publicIssuesRouter);
+  app.use(publicVisitsRouter);
 
   // Serve the built SPA when it exists (production / post-build).
   const indexHtml = path.join(CLIENT_DIST, "index.html");

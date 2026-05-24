@@ -28,3 +28,15 @@ export const webhookLimiter = rateLimit({
   legacyHeaders: false,
   skip: () => process.env["NODE_ENV"] === "test",
 });
+
+// Visit-beacon limiter (#87). Every project landing page fires one beacon
+// on mount, so an honest tab might trigger a handful per minute (refresh,
+// open in new tab). 30/min/IP is comfortably above that and well below
+// what'd let a hostile client stuff the table.
+export const visitIngestLimiter = rateLimit({
+  windowMs: 60_000,
+  limit: 30,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  skip: () => process.env["NODE_ENV"] === "test",
+});

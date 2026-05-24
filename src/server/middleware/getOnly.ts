@@ -1,15 +1,21 @@
 import type { RequestHandler } from "express";
 
-// Return 405 on any non-GET request whose path is not /webhooks/github.
-// HEAD and OPTIONS are skipped to remain RFC-compliant.
+// Return 405 on any non-GET request whose path isn't in the explicit
+// POST allow-list. HEAD and OPTIONS are skipped to remain RFC-compliant.
 // Mount AFTER helmet but BEFORE any routes.
+//
+// Currently allowed POST paths:
+// - /webhooks/github  (deploy + workflow_run notifications)
+// - /api/visit/<slug> (#87 visit beacon from each portfolio site)
+const POST_ALLOWLIST_REGEX = [/^\/webhooks\/github$/, /^\/api\/visit\/[A-Za-z0-9_-]{1,40}$/];
+
 export const getOnly: RequestHandler = (req, res, next) => {
   const method = req.method.toUpperCase();
   if (method === "HEAD" || method === "OPTIONS" || method === "GET") {
     next();
     return;
   }
-  if (req.path === "/webhooks/github") {
+  if (POST_ALLOWLIST_REGEX.some((re) => re.test(req.path))) {
     next();
     return;
   }

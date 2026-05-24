@@ -12,6 +12,7 @@ import { useEventLog } from "../hooks/useEventLog.js";
 import { useInfra } from "../hooks/useInfra.js";
 import { useSSE } from "../hooks/useSSE.js";
 import { useStatus } from "../hooks/useStatus.js";
+import { useVisits } from "../hooks/useVisits.js";
 
 interface StatusChangePayload {
   slug?: string;
@@ -20,6 +21,7 @@ interface StatusChangePayload {
 export function Home(): JSX.Element {
   const { data, error, loading, refresh } = useStatus();
   const { infra } = useInfra();
+  const { data: visits } = useVisits();
   const { events, onEvent: pushEvent } = useEventLog(6);
 
   // Per-project flash counter. Bumps each time a status_change event for
@@ -57,7 +59,7 @@ export function Home(): JSX.Element {
           </div>
         </div>
         <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400 max-w-2xl">
-          Eleven projects on one VM in northcentralus. Health pings every 30s, deploys streamed in
+          Five projects on one VM in northcentralus. Health pings every 30s, deploys streamed in
           over webhooks, commits cached hourly.
         </p>
       </header>
@@ -89,6 +91,7 @@ export function Home(): JSX.Element {
                 key={project.slug}
                 project={project}
                 flashKey={flashBySlug[project.slug] ?? 0}
+                visit={visits?.find((v) => v.slug === project.slug) ?? null}
               />
             ))}
           <UpcomingCard planned={data.filter((p) => p.status === "planned")} />
