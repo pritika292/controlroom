@@ -1,4 +1,5 @@
 import { useInfra, type ContainerEntry } from "../hooks/useInfra.js";
+import { InfraExtraTiles } from "./InfraExtraTiles.js";
 
 function formatUptime(seconds: number): string {
   if (seconds < 60) return `${Math.floor(seconds)}S`;
@@ -23,6 +24,8 @@ export function InfraPanel(): JSX.Element | null {
         <ServicesCard infra={infra} />
         <CostCard infra={infra} />
       </div>
+
+      <InfraExtraTiles />
 
       <ContainerGrid containers={infra.containers} />
     </section>
@@ -89,7 +92,7 @@ function ServicesCard({
       <ServiceRow label="POSTGRES 16" up={infra.postgres.up} latencyMs={infra.postgres.latencyMs} />
       <ServiceRow label="REDIS 7 / DB12" up={infra.redis.up} latencyMs={infra.redis.latencyMs} />
 
-      <p className="mt-4 te-code">SHARED ACROSS ALL 11 PROJECTS</p>
+      <p className="mt-4 te-code">SHARED ACROSS ALL 5 PROJECTS</p>
     </article>
   );
 }

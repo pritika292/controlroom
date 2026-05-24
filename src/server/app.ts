@@ -12,6 +12,7 @@ import { projectCommitsRouter } from "./routes/projectCommits.js";
 import { projectDeploysRouter } from "./routes/projectDeploys.js";
 import { publicStatsRouter } from "./routes/publicStats.js";
 import { publicInfraRouter } from "./routes/publicInfra.js";
+import { publicInfraExtrasRouter } from "./routes/publicInfraExtras.js";
 import { publicIncidentsRouter } from "./routes/publicIncidents.js";
 import { publicDeployFrequencyRouter } from "./routes/publicDeployFrequency.js";
 import { publicIssuesRouter } from "./routes/publicIssues.js";
@@ -70,6 +71,7 @@ export function createApp(): Express {
   app.use(projectDeploysRouter);
   app.use(publicStatsRouter);
   app.use(publicInfraRouter);
+  app.use(publicInfraExtrasRouter);
   app.use(publicIncidentsRouter);
   app.use(publicDeployFrequencyRouter);
   app.use(publicIssuesRouter);
