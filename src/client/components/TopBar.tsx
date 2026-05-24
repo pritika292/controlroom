@@ -1,3 +1,4 @@
+import { ContactStrip } from "./ContactStrip.js";
 import { ThemeToggle } from "./ThemeToggle.js";
 
 function NavLink({ href, children }: { href: string; children: React.ReactNode }): JSX.Element {
@@ -24,7 +25,8 @@ export function TopBar(): JSX.Element {
           <NavLink href="/about">ABOUT</NavLink>
         </nav>
 
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-5">
+          <ContactStrip />
           <ThemeToggle />
         </div>
       </div>
