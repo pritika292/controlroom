@@ -13,6 +13,52 @@ function fakeCommit(sha: string, message: string, date: string): unknown {
   };
 }
 
+function fakeIssue(
+  number: number,
+  title: string,
+  state: "open" | "closed",
+  createdAt: string,
+  closedAt: string | null = null,
+): unknown {
+  return {
+    number,
+    title,
+    state,
+    created_at: createdAt,
+    closed_at: closedAt,
+    html_url: `https://github.com/p/p/issues/${number}`,
+  };
+}
+
+// Builds a fetch mock that returns shape-correct responses per URL path.
+// Lets each test override one slot without breaking the other two endpoints
+// syncOnce calls (commits, runs, issues).
+function fetchMockBy(opts: {
+  commits?: () => unknown;
+  runs?: () => unknown;
+  issues?: () => unknown;
+  ok?: boolean;
+  status?: number;
+  statusText?: string;
+}): ReturnType<typeof vi.fn> {
+  const baseOk = opts.ok ?? true;
+  return vi.fn(async (url: string) => {
+    const body = url.includes("/commits")
+      ? (opts.commits?.() ?? [])
+      : url.includes("/actions/runs")
+        ? (opts.runs?.() ?? { workflow_runs: [] })
+        : url.includes("/issues")
+          ? (opts.issues?.() ?? [])
+          : {};
+    return {
+      ok: baseOk,
+      status: opts.status ?? 200,
+      statusText: opts.statusText ?? "OK",
+      json: async () => body,
+    };
+  });
+}
+
 describeIfDb("githubSync", () => {
   let client: pg.Client;
 
@@ -23,6 +69,7 @@ describeIfDb("githubSync", () => {
 
   beforeEach(async () => {
     await client.query("TRUNCATE commits_cache");
+    await client.query("TRUNCATE issues_cache");
   });
 
   afterEach(() => {
@@ -34,9 +81,8 @@ describeIfDb("githubSync", () => {
   });
 
   it("upserts commits for each live project on success", async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => [
+    const fetchSpy = fetchMockBy({
+      commits: () => [
         fakeCommit("a".repeat(40), "first", "2026-05-20T00:00:00Z"),
         fakeCommit("b".repeat(40), "second\nlong body", "2026-05-21T00:00:00Z"),
       ],
@@ -73,9 +119,8 @@ describeIfDb("githubSync", () => {
   it("is idempotent: re-running with the same commits does not duplicate", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => [fakeCommit("a".repeat(40), "first", "2026-05-20T00:00:00Z")],
+      fetchMockBy({
+        commits: () => [fakeCommit("a".repeat(40), "first", "2026-05-20T00:00:00Z")],
       }),
     );
 
@@ -157,5 +202,50 @@ describeIfDb("githubSync", () => {
     expect(shortliveRow?.status).toBe("success");
     expect(shortliveRow?.actor).toBe("pritika292");
     expect(rows.find((r) => r.project === "pg-inspector")).toBeDefined();
+  });
+
+  it("syncs issues, filters out PRs, and reflects state changes on re-sync", async () => {
+    // First pass: issue #1 is open, issue #2 is closed, plus one PR that
+    // GitHub mixes into /issues which we must filter out.
+    const firstPass = fetchMockBy({
+      issues: () => [
+        fakeIssue(1, "open ticket", "open", "2026-05-22T00:00:00Z"),
+        fakeIssue(2, "closed ticket", "closed", "2026-05-21T00:00:00Z", "2026-05-22T00:00:00Z"),
+        // PR — must be filtered.
+        { ...(fakeIssue(3, "a PR", "open", "2026-05-20T00:00:00Z") as object), pull_request: {} },
+      ],
+    });
+    vi.stubGlobal("fetch", firstPass);
+    await syncOnce();
+
+    {
+      const { rows } = await client.query<{ n: string }>("SELECT count(*) AS n FROM issues_cache");
+      // 2 live projects × 2 non-PR issues = 4 rows.
+      expect(Number(rows[0]!.n)).toBe(4);
+    }
+
+    // Second pass: issue #1 now closed. Upsert should flip state in place.
+    const secondPass = fetchMockBy({
+      issues: () => [
+        fakeIssue(1, "open ticket", "closed", "2026-05-22T00:00:00Z", "2026-05-23T00:00:00Z"),
+        fakeIssue(2, "closed ticket", "closed", "2026-05-21T00:00:00Z", "2026-05-22T00:00:00Z"),
+      ],
+    });
+    vi.stubGlobal("fetch", secondPass);
+    await syncOnce();
+
+    const { rows } = await client.query<{
+      project: string;
+      number: number;
+      state: string;
+    }>(
+      `SELECT project, number, state FROM issues_cache
+       WHERE project = 'shortlive' ORDER BY number`,
+    );
+    expect(rows).toHaveLength(2);
+    expect(rows[0]!.number).toBe(1);
+    expect(rows[0]!.state).toBe("closed");
+    expect(rows[1]!.number).toBe(2);
+    expect(rows[1]!.state).toBe("closed");
   });
 });

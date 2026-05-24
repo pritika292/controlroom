@@ -5,6 +5,7 @@ import { getLiveProjects } from "../projects.js";
 const DEFAULT_INTERVAL_MS = 60 * 60 * 1_000; // hourly
 const COMMITS_PER_PROJECT = 20;
 const DEPLOYS_PER_PROJECT = 30;
+const ISSUES_PER_PROJECT = 30;
 
 interface RawCommit {
   sha: string;
@@ -25,6 +26,18 @@ interface RawRun {
   run_started_at: string;
   updated_at: string;
   actor: { login: string } | null;
+}
+
+interface RawIssue {
+  number: number;
+  title: string;
+  state: "open" | "closed";
+  created_at: string;
+  closed_at: string | null;
+  html_url: string;
+  // GitHub's /issues endpoint also returns pull requests. PR objects carry
+  // a `pull_request` key; plain issues do not. We filter on its presence.
+  pull_request?: unknown;
 }
 
 let handle: ReturnType<typeof setTimeout> | null = null;
@@ -124,6 +137,50 @@ export async function syncDeploysForProject(
   }
 }
 
+export async function syncIssuesForProject(
+  repo: string,
+  slug: string,
+  hasPat: boolean,
+): Promise<void> {
+  // state=all so closing or reopening is reflected without a second call.
+  const res = await fetch(
+    `https://api.github.com/repos/${repo}/issues?state=all&per_page=${ISSUES_PER_PROJECT}&sort=updated`,
+    { headers: githubHeaders(hasPat), signal: AbortSignal.timeout(10_000) },
+  );
+
+  if (!res.ok) {
+    console.error(`[githubSync] ${slug} issues: GitHub returned ${res.status} ${res.statusText}`);
+    return;
+  }
+
+  const raw = (await res.json()) as RawIssue[];
+  // Drop PRs — they live in /issues by GitHub convention but we want
+  // actual triage tickets only.
+  const issues = raw.filter((i) => i.pull_request === undefined);
+
+  const pool = getPool();
+  for (const i of issues) {
+    await pool.query(
+      `INSERT INTO issues_cache (project, number, title, state, opened_at, closed_at, html_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       ON CONFLICT (project, number) DO UPDATE SET
+         title     = EXCLUDED.title,
+         state     = EXCLUDED.state,
+         closed_at = EXCLUDED.closed_at,
+         html_url  = EXCLUDED.html_url`,
+      [
+        slug,
+        i.number,
+        i.title.slice(0, 500),
+        i.state,
+        new Date(i.created_at).toISOString(),
+        i.closed_at ? new Date(i.closed_at).toISOString() : null,
+        i.html_url,
+      ],
+    );
+  }
+}
+
 export async function syncOnce(): Promise<void> {
   // Anonymous calls work for public repos at 60/hr/IP. PAT bumps that to
   // 5000/hr. With 11 live projects fetching commits + deploys = 22/hr,
@@ -143,6 +200,11 @@ export async function syncOnce(): Promise<void> {
       await syncDeploysForProject(project.repo, project.slug, hasPat);
     } catch (err) {
       console.error(`[githubSync] ${project.slug} deploys failed:`, err);
+    }
+    try {
+      await syncIssuesForProject(project.repo, project.slug, hasPat);
+    } catch (err) {
+      console.error(`[githubSync] ${project.slug} issues failed:`, err);
     }
   }
 }

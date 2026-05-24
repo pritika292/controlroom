@@ -70,7 +70,7 @@ export function Project(): JSX.Element {
 
   if (loading && data === null) {
     return (
-      <main className="max-w-7xl mx-auto px-6 lg:px-8 py-16">
+      <main className="max-w-screen-2xl mx-auto px-6 lg:px-8 xl:px-12 py-16">
         <p className="te-label">LOADING...</p>
       </main>
     );
@@ -81,7 +81,7 @@ export function Project(): JSX.Element {
   if (project.status === "planned") return <PlannedHero project={project} />;
 
   return (
-    <main className="max-w-5xl mx-auto px-6 lg:px-8 py-10">
+    <main className="max-w-screen-2xl mx-auto px-6 lg:px-8 xl:px-12 py-10">
       <Link to="/" className="te-label text-zinc-500 hover:text-accent">
         {"<-"} STATUS BOARD
       </Link>
@@ -93,8 +93,8 @@ export function Project(): JSX.Element {
           <StatusDot project={project} />
           <h1 className="font-mono text-3xl text-zinc-900 dark:text-white">{project.name}</h1>
         </div>
-        <p className="mt-3 text-zinc-700 dark:text-zinc-300">{project.tagline}</p>
-        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">{project.description}</p>
+        <p className="mt-3 text-lg text-zinc-700 dark:text-zinc-300">{project.tagline}</p>
+        <p className="mt-2 text-base text-zinc-500 dark:text-zinc-400">{project.description}</p>
 
         {project.tech.length > 0 && (
           <div className="mt-4 flex flex-wrap gap-1">
@@ -189,7 +189,7 @@ function Stat({ label, value }: { label: string; value: string }): JSX.Element {
   return (
     <div className="px-4 py-3">
       <dt className="te-label">{label}</dt>
-      <dd className="mt-1 font-mono text-2xl text-zinc-900 dark:text-white">{value}</dd>
+      <dd className="mt-1 font-mono text-3xl text-zinc-900 dark:text-white">{value}</dd>
     </div>
   );
 }

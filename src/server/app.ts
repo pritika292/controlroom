@@ -4,6 +4,7 @@ import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { securityHeaders } from "./middleware/securityHeaders.js";
 import { getOnly } from "./middleware/getOnly.js";
+import { publicReadLimiter, webhookLimiter } from "./middleware/rateLimit.js";
 import { sseRouter } from "./routes/sseStream.js";
 import { publicStatusRouter } from "./routes/publicStatus.js";
 import { projectPingsRouter } from "./routes/projectPings.js";
@@ -13,6 +14,7 @@ import { publicStatsRouter } from "./routes/publicStats.js";
 import { publicInfraRouter } from "./routes/publicInfra.js";
 import { publicIncidentsRouter } from "./routes/publicIncidents.js";
 import { publicDeployFrequencyRouter } from "./routes/publicDeployFrequency.js";
+import { publicIssuesRouter } from "./routes/publicIssues.js";
 import { webhooksGithubRouter } from "./routes/webhooksGithub.js";
 
 const CLIENT_DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../client");
@@ -24,12 +26,18 @@ export function createApp(): Express {
   const app = express();
 
   app.disable("x-powered-by");
+  // Caddy proxies us; trust one hop so express-rate-limit (and any future
+  // IP-derived logic) sees the real client IP from X-Forwarded-For instead
+  // of the loopback address.
+  app.set("trust proxy", 1);
 
   app.use(securityHeaders);
   app.use(getOnly);
 
   // GitHub webhook reads a raw body for HMAC verification, so mount it
-  // before express.json() consumes the stream.
+  // before express.json() consumes the stream. Rate-limited separately
+  // from the public read endpoints.
+  app.use("/webhooks", webhookLimiter);
   app.use(webhooksGithubRouter);
 
   app.use(express.json());
@@ -39,7 +47,13 @@ export function createApp(): Express {
   });
 
   // SSE hub — must come before the SPA fallback so /api/stream isn't swallowed.
+  // Not rate-limited (long-lived connection, not request-shaped).
   app.use(sseRouter);
+
+  // Per-IP rate limit on every public read endpoint. Redis caches them at
+  // 30s so this is a backstop against hot-loop scrapers, not a primary
+  // throttle.
+  app.use("/api/public", publicReadLimiter);
 
   // Public status + per-project ping/commit/deploy routes.
   app.use(publicStatusRouter);
@@ -50,6 +64,7 @@ export function createApp(): Express {
   app.use(publicInfraRouter);
   app.use(publicIncidentsRouter);
   app.use(publicDeployFrequencyRouter);
+  app.use(publicIssuesRouter);
 
   // Serve the built SPA when it exists (production / post-build).
   const indexHtml = path.join(CLIENT_DIST, "index.html");

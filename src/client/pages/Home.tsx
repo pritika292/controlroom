@@ -3,6 +3,7 @@ import { DeployFrequencyChart } from "../components/DeployFrequencyChart.js";
 import { EventTicker } from "../components/EventTicker.js";
 import { IncidentBanner } from "../components/IncidentBanner.js";
 import { InfraPanel } from "../components/InfraPanel.js";
+import { IssuesPanel } from "../components/IssuesPanel.js";
 import { ProjectCard } from "../components/ProjectCard.js";
 import { StatsStrip } from "../components/StatsStrip.js";
 import { SystemClock } from "../components/SystemClock.js";
@@ -44,7 +45,7 @@ export function Home(): JSX.Element {
   const { connected } = useSSE("/api/stream", onSse);
 
   return (
-    <main className="max-w-7xl mx-auto px-6 lg:px-8 py-10">
+    <main className="max-w-screen-2xl mx-auto px-6 lg:px-8 xl:px-12 py-10">
       <header>
         <div className="flex items-baseline justify-between gap-4 flex-wrap">
           <h1 className="font-mono text-3xl tracking-tight text-zinc-900 dark:text-white">
@@ -69,6 +70,8 @@ export function Home(): JSX.Element {
 
       <EventTicker events={events} />
 
+      <IssuesPanel />
+
       {loading && <p className="mt-8 te-label">LOADING...</p>}
 
       {error !== null && (
@@ -78,7 +81,7 @@ export function Home(): JSX.Element {
       )}
 
       {data !== null && (
-        <section className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <section className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {data
             .filter((p) => p.status === "live")
             .map((project) => (

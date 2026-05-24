@@ -56,8 +56,9 @@ export function LatencyHistogram({ pings, width = 720, height = 120 }: Props): J
   if (buckets.length === 0) {
     return (
       <svg
-        width={width}
-        height={height}
+        viewBox={`0 0 ${width} ${height}`}
+        preserveAspectRatio="xMidYMid meet"
+        className="block w-full h-auto"
         role="img"
         aria-label="Latency histogram: not enough data"
         xmlns="http://www.w3.org/2000/svg"
@@ -82,8 +83,9 @@ export function LatencyHistogram({ pings, width = 720, height = 120 }: Props): J
 
   return (
     <svg
-      width={width}
-      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="xMidYMid meet"
+      className="block w-full h-auto"
       role="img"
       aria-label={`Latency histogram: ${total} measured pings across ${buckets.length} buckets`}
       xmlns="http://www.w3.org/2000/svg"

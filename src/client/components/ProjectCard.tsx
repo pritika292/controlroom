@@ -50,6 +50,10 @@ export function ProjectCard({ project, flashKey }: Props): JSX.Element {
       className={
         "relative te-panel p-4 transition-colors duration-700 " +
         (isPlanned ? "border-dashed text-zinc-400 dark:text-zinc-600" : "hover:border-accent ") +
+        // Live cards get a slow breathing border so the "this is clickable"
+        // affordance is unmissable. Suppressed while a flash is active (the
+        // flash already shows a solid accent border + tint).
+        (!isPlanned && !flashing ? " te-breathe" : "") +
         (flashing ? " border-accent bg-accent/5 dark:bg-accent/10" : "")
       }
     >
@@ -60,7 +64,7 @@ export function ProjectCard({ project, flashKey }: Props): JSX.Element {
 
       <h3
         className={
-          "mt-3 font-mono text-lg " +
+          "mt-3 font-mono text-xl " +
           (isPlanned ? "text-zinc-400 dark:text-zinc-600" : "text-zinc-900 dark:text-white")
         }
       >
