@@ -2,14 +2,14 @@
 // the About page (#83). Mermaid auto-layouts look amateur; react-flow would
 // be a 100 KB add for one read-only diagram. Plain SVG, no deps.
 //
-// Boxes are positioned by hand. Coordinates aren't precious — tweak freely
-// if you reshape the layout. Stroke + fill use Tailwind's theme tokens so
-// the diagram tracks the light/dark switch.
+// Sized for full-width display (not a narrow column) — coordinates are in
+// SVG units, scaled by CSS. The viewBox is the "canvas"; widen/heighten
+// freely.
 
 export function ArchDiagram(): JSX.Element {
   return (
     <svg
-      viewBox="0 0 540 320"
+      viewBox="0 0 960 460"
       className="block w-full h-auto"
       role="img"
       aria-label="ControlRoom architecture: portfolio sites send health pings and visit beacons through Caddy to the controlroom server, which writes to Postgres and Redis and streams updates back to browsers over SSE."
@@ -29,54 +29,92 @@ export function ArchDiagram(): JSX.Element {
         </marker>
       </defs>
 
-      {/* Five portfolio sites stacked on the left */}
-      <Box x={10} y={10} w={120} h={28} label="focusroom" />
-      <Box x={10} y={50} w={120} h={28} label="pg-inspector" />
-      <Box x={10} y={90} w={120} h={28} label="shortlive" />
-      <Box x={10} y={130} w={120} h={28} label="portfolio" />
-      <Box x={10} y={170} w={120} h={28} label="controlroom" />
+      {/* Group label: portfolio sites */}
+      <text
+        x={140}
+        y={30}
+        textAnchor="middle"
+        className="fill-zinc-500 dark:fill-zinc-500 font-mono uppercase"
+        fontSize={11}
+        letterSpacing={2}
+      >
+        Portfolio sites
+      </text>
 
-      {/* Caddy in the middle */}
-      <Box x={200} y={80} w={120} h={50} label="Caddy" subLabel="TLS / proxy" />
+      {/* Five portfolio sites stacked on the left */}
+      <Box x={20} y={50} w={240} h={48} label="focusroom" />
+      <Box x={20} y={110} w={240} h={48} label="pg-inspector" />
+      <Box x={20} y={170} w={240} h={48} label="shortlive" />
+      <Box x={20} y={230} w={240} h={48} label="portfolio" />
+      <Box x={20} y={290} w={240} h={48} label="controlroom" />
+
+      {/* Caddy in the middle-left */}
+      <Box x={350} y={170} w={200} h={80} label="Caddy" subLabel="TLS · reverse proxy" />
 
       {/* Browsers */}
-      <Box x={200} y={170} w={120} h={50} label="browsers" subLabel="SSE clients" dashed />
+      <Box x={350} y={300} w={200} h={80} label="browsers" subLabel="SSE clients" dashed />
 
-      {/* Controlroom + data stores */}
-      <Box x={390} y={10} w={140} h={50} label="GitHub" subLabel="webhooks + sync" dashed />
-      <Box x={390} y={80} w={140} h={50} label="controlroom" subLabel=":3012 Express 5" accent />
-      <Box x={390} y={170} w={140} h={28} label="Postgres 16" />
-      <Box x={390} y={210} w={140} h={28} label="Redis 7" />
+      {/* GitHub */}
+      <Box x={640} y={50} w={280} h={80} label="GitHub" subLabel="webhooks + sync" dashed />
 
-      {/* Edges — sites -> caddy */}
-      <Edge from={[130, 24]} to={[200, 90]} />
-      <Edge from={[130, 64]} to={[200, 95]} />
-      <Edge from={[130, 104]} to={[200, 105]} />
-      <Edge from={[130, 144]} to={[200, 115]} />
-      <Edge from={[130, 184]} to={[200, 120]} />
+      {/* Controlroom — the star of the diagram */}
+      <Box
+        x={640}
+        y={170}
+        w={280}
+        h={80}
+        label="controlroom"
+        subLabel=":3012  ·  Express 5  ·  Node 24"
+        accent
+      />
+
+      {/* Postgres + Redis stacked under controlroom */}
+      <Box
+        x={640}
+        y={290}
+        w={280}
+        h={48}
+        label="Postgres 16"
+        subLabel="status · visits · deploys"
+      />
+      <Box
+        x={640}
+        y={350}
+        w={280}
+        h={48}
+        label="Redis 7"
+        subLabel="cache · pub/sub · rate limits"
+      />
+
+      {/* Edges — sites -> caddy. Fanned arrows from each site box. */}
+      <Edge from={[260, 74]} to={[350, 195]} />
+      <Edge from={[260, 134]} to={[350, 205]} />
+      <Edge from={[260, 194]} to={[350, 210]} />
+      <Edge from={[260, 254]} to={[350, 220]} />
+      <Edge from={[260, 314]} to={[350, 235]} />
 
       {/* Caddy -> controlroom */}
-      <Edge from={[320, 105]} to={[390, 105]} />
+      <Edge from={[550, 210]} to={[640, 210]} />
 
       {/* controlroom -> postgres + redis */}
-      <Edge from={[460, 130]} to={[460, 170]} />
-      <Edge from={[480, 130]} to={[480, 210]} />
+      <Edge from={[760, 250]} to={[760, 290]} />
+      <Edge from={[800, 250]} to={[800, 350]} />
 
       {/* GitHub <-> controlroom */}
-      <Edge from={[460, 60]} to={[460, 80]} both />
+      <Edge from={[780, 130]} to={[780, 170]} both />
 
       {/* controlroom -> browsers (SSE) */}
-      <Edge from={[390, 120]} to={[320, 195]} dashed />
+      <Edge from={[640, 240]} to={[550, 335]} dashed />
 
-      {/* Caption strip */}
+      {/* Caption */}
       <text
-        x={270}
-        y={310}
+        x={480}
+        y={445}
         textAnchor="middle"
         className="fill-zinc-500 dark:fill-zinc-400 font-mono"
-        fontSize={10}
+        fontSize={13}
       >
-        ── solid: HTTPS request · - - dashed: stream / async push
+        ── solid: HTTPS request - - dashed: stream / async push
       </text>
     </svg>
   );
@@ -106,7 +144,7 @@ function Box({
     : dashed
       ? "stroke-zinc-300 dark:stroke-zinc-700"
       : "stroke-zinc-400 dark:stroke-zinc-600";
-  const dashAttr = dashed ? "4 3" : undefined;
+  const dashAttr = dashed ? "6 4" : undefined;
   return (
     <g>
       <rect
@@ -114,28 +152,29 @@ function Box({
         y={y}
         width={w}
         height={h}
-        rx={3}
-        ry={3}
+        rx={6}
+        ry={6}
         className={`fill-transparent ${stroke}`}
-        strokeWidth={1}
+        strokeWidth={1.5}
         strokeDasharray={dashAttr}
       />
       <text
         x={x + w / 2}
-        y={subLabel === undefined ? y + h / 2 + 4 : y + h / 2 - 1}
+        y={subLabel === undefined ? y + h / 2 + 6 : y + h / 2 - 4}
         textAnchor="middle"
         className={accent ? "fill-accent font-mono" : "fill-zinc-900 dark:fill-white font-mono"}
-        fontSize={11}
+        fontSize={accent ? 18 : 16}
+        fontWeight={accent ? 600 : 500}
       >
         {label}
       </text>
       {subLabel !== undefined && (
         <text
           x={x + w / 2}
-          y={y + h / 2 + 12}
+          y={y + h / 2 + 16}
           textAnchor="middle"
           className="fill-zinc-500 dark:fill-zinc-400 font-mono"
-          fontSize={9}
+          fontSize={12}
         >
           {subLabel}
         </text>
@@ -155,7 +194,7 @@ function Edge({
   dashed?: boolean;
   both?: boolean;
 }): JSX.Element {
-  const dashAttr = dashed ? "4 3" : undefined;
+  const dashAttr = dashed ? "6 4" : undefined;
   return (
     <line
       x1={from[0]}
@@ -163,7 +202,7 @@ function Edge({
       x2={to[0]}
       y2={to[1]}
       className="stroke-zinc-500 dark:stroke-zinc-400"
-      strokeWidth={1}
+      strokeWidth={1.75}
       strokeDasharray={dashAttr}
       markerEnd="url(#arrow)"
       markerStart={both ? "url(#arrow)" : undefined}

@@ -35,40 +35,47 @@ export function About(): JSX.Element {
       <p className="te-label">ABOUT / CONTROLROOM</p>
       <h1 className="mt-2 font-mono text-3xl text-zinc-900 dark:text-white">What this is.</h1>
 
-      <div className="mt-10 grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+      {/* Full-width architecture diagram. Lived in the middle column
+          originally and was too squeezed to read. Now spans the page so
+          labels and edges are legible on a normal monitor. */}
+      <section className="mt-10 te-panel p-6 lg:p-8">
+        <p className="te-label">ARCHITECTURE</p>
+        <div className="mt-4">
+          <ArchDiagram />
+        </div>
+      </section>
+
+      <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
         {/* Left: story */}
         <section className="space-y-6">
           <p className="te-label">STORY</p>
-          <p className="text-base leading-relaxed text-zinc-700 dark:text-zinc-300">
+          <p className="text-base leading-relaxed text-justify text-zinc-700 dark:text-zinc-300">
             A public, read-only status board for every project in Pritika&apos;s portfolio. Health
             pings, deploy timelines, recent commits, AI-budget counters, request latency, visit
             counts. No login. No admin surface. No secrets in the browser.
           </p>
-          <p className="text-base leading-relaxed text-zinc-700 dark:text-zinc-300">
+          <p className="text-base leading-relaxed text-justify text-zinc-700 dark:text-zinc-300">
             Five projects share one Azure VM in northcentralus. ControlRoom polls each one&apos;s{" "}
             <code className="font-mono text-zinc-900 dark:text-white">/health</code> every 30
             seconds, syncs commits from GitHub hourly, and accepts HMAC-verified deploy webhooks.
             The frontend opens a Server-Sent Events stream and repaints the dot the moment a status
             flips.
           </p>
-          <p className="text-base leading-relaxed text-zinc-700 dark:text-zinc-300">
+          <p className="text-base leading-relaxed text-justify text-zinc-700 dark:text-zinc-300">
             Visit counts come from a tiny beacon every project fires once on landing-page mount; the
             server hashes the source IP with a daily-rotating salt and aggregates this-week vs
             last-week per project. Bots are classified and excluded from the public count.
           </p>
-          <p className="text-base leading-relaxed text-zinc-700 dark:text-zinc-300">
+          <p className="text-base leading-relaxed text-justify text-zinc-700 dark:text-zinc-300">
             Deploy is GitHub Actions → OIDC → <code className="font-mono">az vm run-command</code>.
             No long-lived secrets in the repo; the runtime reads its OpenAI key from Azure Key Vault
             via the VM&apos;s Managed Identity at boot.
           </p>
         </section>
 
-        {/* Middle: diagram + tech */}
+        {/* Middle: tech list (diagram moved to its own full-width section above). */}
         <section className="space-y-6">
           <p className="te-label">TECH</p>
-          <div className="te-panel p-5">
-            <ArchDiagram />
-          </div>
           <dl className="space-y-3">
             {TECH.map((t) => (
               <div key={t.name}>
