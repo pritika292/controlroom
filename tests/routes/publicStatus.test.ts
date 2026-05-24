@@ -72,7 +72,10 @@ describeIfDb("GET /api/public/status", () => {
     expect(row!.latencyMs).toBeNull();
   });
 
-  it("planned projects always have null last-ping fields", async () => {
+  it("planned projects (if any) always have null last-ping fields", async () => {
+    // After #81 the registry has no planned entries — the assertion below
+    // is vacuously true for now but stays meaningful if/when a planned
+    // project is added back.
     const app = createApp();
     const res = await request(app).get("/api/public/status");
     expect(res.status).toBe(200);
@@ -86,7 +89,6 @@ describeIfDb("GET /api/public/status", () => {
     }>;
 
     const planned = body.filter((r) => r.status === "planned");
-    expect(planned.length).toBeGreaterThan(0);
     for (const row of planned) {
       expect(row.lastStatus).toBeNull();
       expect(row.lastPingAt).toBeNull();

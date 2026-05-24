@@ -81,13 +81,21 @@ export function ProjectCard({ project, flashKey }: Props): JSX.Element {
       <div className="mt-4">
         <Sparkline pings={pings} width={280} height={28} />
       </div>
+
+      {/* Inline click affordance (#85). Sits at the bottom of the card,
+          subtle by default, brightens to a solid accent on hover. */}
+      {!isPlanned && (
+        <p className="mt-3 te-label text-accent/70 group-hover:text-accent text-right">
+          open status page →
+        </p>
+      )}
     </article>
   );
 
   // Planned projects don't link anywhere yet; live projects open the detail page.
   if (isPlanned) return inner;
   return (
-    <Link to={`/p/${project.slug}`} className="block">
+    <Link to={`/p/${project.slug}`} className="block group">
       {inner}
     </Link>
   );

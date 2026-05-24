@@ -26,7 +26,9 @@ export function useIssues(
   slug: string | null,
   state: IssueFilter,
   intervalMs: number = 5 * 60_000,
-  limit: number = 10,
+  // Default 5 (was 10) — the panel uses this and 10 rows was too tall (#84).
+  // Pass a larger value explicitly if a future caller needs more.
+  limit: number = 5,
 ): IssuesState {
   const [issues, setIssues] = useState<IssueItem[]>([]);
   const [error, setError] = useState<string | null>(null);

@@ -11,10 +11,22 @@
   body {
     background: #fafafa;
     color: #18181b;
+    /* #89: bumped from default 400 to 500 (medium). Reads as heavier
+       on dark without becoming bold. */
+    font-weight: 500;
   }
   html.dark body {
     background: #0a0a0a;
     color: #fafafa;
+  }
+  p {
+    font-weight: 500;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-weight: 700;
   }
 }
 
@@ -24,8 +36,9 @@
   .te-panel {
     @apply border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950;
   }
+  /* #89: font-medium → font-semibold to lift small-caps labels. */
   .te-label {
-    @apply uppercase tracking-[0.18em] text-xs font-medium text-zinc-500 dark:text-zinc-400;
+    @apply uppercase tracking-[0.18em] text-xs font-semibold text-zinc-500 dark:text-zinc-400;
   }
   .te-code {
     @apply font-mono text-sm text-zinc-500 dark:text-zinc-400;
