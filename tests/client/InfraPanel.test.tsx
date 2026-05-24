@@ -30,9 +30,15 @@ const INFRA_EXTRAS_BODY = {
   openIssues: 3,
   pgConnections: { used: 4, max: 100 },
   redisKeys: 12,
-  largestTable: { name: "health_pings", rows: 1234 },
   lastDeploy: { slug: "shortlive", whenMs: Date.now() - 10_000, status: "success" },
   uptime7dPct: 99.5,
+  ai: {
+    callsToday: 12,
+    tokensToday: 45000,
+    costTodayCents: 4.2,
+    callsThisWeek: 84,
+    modelInUse: "gpt-4.1-mini",
+  },
 };
 
 function urlAwareFetch(): ReturnType<typeof vi.fn> {

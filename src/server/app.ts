@@ -18,6 +18,7 @@ import { publicDeployFrequencyRouter } from "./routes/publicDeployFrequency.js";
 import { publicIssuesRouter } from "./routes/publicIssues.js";
 import { publicVisitsRouter } from "./routes/publicVisits.js";
 import { visitIngestRouter } from "./routes/visitIngest.js";
+import { aiUsageIngestRouter } from "./routes/aiUsageIngest.js";
 import { webhooksGithubRouter } from "./routes/webhooksGithub.js";
 
 const CLIENT_DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../client");
@@ -54,6 +55,12 @@ export function createApp(): Express {
   // getOnly allow-list (POST_ALLOWLIST_REGEX).
   app.use("/api/visit", visitIngestLimiter);
   app.use(visitIngestRouter);
+
+  // AI usage ingest. Same shape as visit ingest. Reuses the visit limiter
+  // for now — both surfaces want "more than a normal request rate but not
+  // unlimited"; if AI traffic gets noisy it can split into its own bucket.
+  app.use("/api/ai-usage", visitIngestLimiter);
+  app.use(aiUsageIngestRouter);
 
   // SSE hub — must come before the SPA fallback so /api/stream isn't swallowed.
   // Not rate-limited (long-lived connection, not request-shaped).

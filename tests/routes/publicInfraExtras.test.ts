@@ -36,8 +36,8 @@ describeIfDb("GET /api/public/infra-extras", () => {
     expect(body).toHaveProperty("openIssues");
     expect(body).toHaveProperty("pgConnections");
     expect(body).toHaveProperty("redisKeys");
-    expect(body).toHaveProperty("largestTable");
     expect(body).toHaveProperty("lastDeploy");
     expect(body).toHaveProperty("uptime7dPct");
+    expect(body).toHaveProperty("ai");
   });
 });

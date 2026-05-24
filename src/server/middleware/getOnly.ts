@@ -5,9 +5,14 @@ import type { RequestHandler } from "express";
 // Mount AFTER helmet but BEFORE any routes.
 //
 // Currently allowed POST paths:
-// - /webhooks/github  (deploy + workflow_run notifications)
-// - /api/visit/<slug> (#87 visit beacon from each portfolio site)
-const POST_ALLOWLIST_REGEX = [/^\/webhooks\/github$/, /^\/api\/visit\/[A-Za-z0-9_-]{1,40}$/];
+// - /webhooks/github     (deploy + workflow_run notifications)
+// - /api/visit/<slug>    (#87 visit beacon from each portfolio site)
+// - /api/ai-usage/<slug> (per-chat-completion usage from AI-using projects)
+const POST_ALLOWLIST_REGEX = [
+  /^\/webhooks\/github$/,
+  /^\/api\/visit\/[A-Za-z0-9_-]{1,40}$/,
+  /^\/api\/ai-usage\/[A-Za-z0-9_-]{1,40}$/,
+];
 
 export const getOnly: RequestHandler = (req, res, next) => {
   const method = req.method.toUpperCase();

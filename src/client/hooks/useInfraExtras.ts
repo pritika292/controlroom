@@ -6,9 +6,15 @@ export interface InfraExtras {
   openIssues: number;
   pgConnections: { used: number; max: number };
   redisKeys: number;
-  largestTable: { name: string; rows: number } | null;
   lastDeploy: { slug: string; whenMs: number; status: string } | null;
   uptime7dPct: number | null;
+  ai: {
+    callsToday: number;
+    tokensToday: number;
+    costTodayCents: number;
+    callsThisWeek: number;
+    modelInUse: string | null;
+  };
 }
 
 export interface InfraExtrasState {
