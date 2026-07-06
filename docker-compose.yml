@@ -15,8 +15,8 @@ services:
     container_name: controlroom
     restart: unless-stopped
     networks: [pritika]
-    ports:
-      - "3012:3012"
+    expose:
+      - "3012"
     env_file:
       - /opt/pritika/_infra/controlroom.env
     healthcheck:
